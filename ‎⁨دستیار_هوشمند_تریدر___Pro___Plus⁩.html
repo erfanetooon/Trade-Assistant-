@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="دستیار هوشمند تحلیل و معاملات کریپتو با دیتای مجزای Spot و Futures، پرایس اکشن، اسمارت مانی، وایکوف و والیوم تریدینگ" />
+  <title>دستیار هوشمند تریدر | Pro &amp; Plus</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Vazirmatn', 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #070b14;
+      color: #e2e8f0;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    .num { font-family: 'Inter', monospace; direction: ltr; display: inline-block; }
+    .card { background: #101726; border: 1px solid #1e293b; }
+    .nav-item.active { color: #38bdf8; }
+    .chart-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 60 !important;
+      background: #070b14 !important;
+      padding: 12px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      border-radius: 0 !important;
+    }
+    .chart-fullscreen #tvChartContainer {
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 75vh !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- Mandatory Registration Modal -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="w-full max-w-md card rounded-3xl p-5 space-y-4 shadow-2xl border-blue-500/30">
+      <div class="text-center space-y-1.5">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-slate-950 font-extrabold text-base shadow-lg">TA</div>
+        <h2 id="authTitle" class="text-lg font-extrabold text-white">خوش آمدید به دستیار هوشمند تریدر</h2>
+        <p class="text-xs text-slate-400">با ثبت‌نام سریع، هدیه شروع رایگان شما بلافاصله فعال می‌شود:</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-center text-xs">
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-3">
+          <div class="text-cyan-300 font-bold">۷ روز رایگان</div>
+          <div class="text-slate-300 mt-0.5 text-xs">دستیار تحلیل‌گر (Plus)</div>
+        </div>
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3">
+          <div class="text-amber-300 font-bold">۱ روز رایگان</div>
+          <div class="text-slate-300 mt-0.5 text-xs">دستیار تریدر (Pro)</div>
+        </div>
+      </div>
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label for="inRegName" class="text-slate-300 block mb-1">نام یا آیدی تلگرام شما <span class="text-rose-400">*</span></label>
+          <input id="inRegName" type="text" required placeholder="مثلاً: علی نجفی یا @username" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm" />
+          <div id="lblRegError" class="hidden text-xs text-rose-400 mt-1">لطفاً نام یا آیدی تلگرام خود را وارد کنید تا دمو فعال شود.</div>
+        </div>
+        <button id="btnCompleteReg" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-sm shadow-lg">شروع و فعال‌سازی دمو رایگان</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-[#0b111e]/95 backdrop-blur-md border-b border-slate-800/80 px-3.5 py-2.5">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-slate-950 font-extrabold text-xs shrink-0">TA</div>
+        <div>
+          <h1 class="text-sm font-bold text-white leading-tight">دستیار هوشمند تریدر</h1>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span id="feedDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="feedStatus" class="text-xs text-slate-400">در حال اتصال...</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button id="btnHeaderPlan" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold">--</button>
+        <button id="btnRefresh" aria-label="بروزرسانی دیتا" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200">↻</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-3 pt-3 space-y-3">
+    <div id="toast" role="status" aria-live="polite" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-xl"></div>
+
+    <!-- Feed Stale / Disconnected Hard Lock Banner -->
+    <div id="staleBanner" class="hidden rounded-2xl p-3 bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-center justify-between gap-2">
+      <span>⚠️ ارتباط با سرور صرافی قطع است. برای حفظ امنیت سرمایه، صدور سیگنال و تحلیل متوقف شده است (هیچ دیتای ساختگی تولید نمی‌شود).</span>
+      <button id="btnRetryFeed" class="px-3 py-1 rounded-lg bg-rose-600 text-white font-bold shrink-0">تلاش مجدد</button>
+    </div>
+
+    <!-- Global Pair / Timeframe / Market / Mode Controls -->
+    <section id="topControlBar" class="card rounded-2xl p-2.5 space-y-2.5">
+      <div class="grid grid-cols-3 gap-2">
+        <select id="selSymbol" aria-label="انتخاب نماد" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl px-2 py-2 text-white num">
+          <option value="BTCUSDT">BTCUSDT</option>
+          <option value="ETHUSDT">ETHUSDT</option>
+          <option value="SOLUSDT">SOLUSDT</option>
+          <option value="BNBUSDT">BNBUSDT</option>
+        </select>
+        <select id="selTimeframe" aria-label="انتخاب تایم‌فریم" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl px-2 py-2 text-white num">
+          <option value="5m">5m (اسکالپ)</option>
+          <option value="15m" selected>15m (کوتاه‌مدت)</option>
+          <option value="1h">1h (سویینگ)</option>
+          <option value="4h">4h (بلندمدت)</option>
+        </select>
+        <select id="selMarket" aria-label="انتخاب بازار" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-xl px-2 py-2 text-white">
+          <option value="FUTURES">Futures (USDⓈ-M)</option>
+          <option value="SPOT">Spot (اسپات)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button id="btnModeAnalyst" class="py-2 rounded-lg text-xs font-bold bg-blue-600 text-white transition">دستیار تحلیل‌گر</button>
+        <button id="btnModeTrader" class="py-2 rounded-lg text-xs font-bold text-slate-400 transition">دستیار تریدر (سیگنال)</button>
+      </div>
+    </section>
+
+    <!-- Paywall Gate -->
+    <section id="paywallGate" class="hidden card rounded-3xl p-5 text-center space-y-3 border-amber-500/40 bg-gradient-to-b from-slate-900 to-slate-950">
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 text-xl">🔒</div>
+      <h2 id="paywallTitle" class="text-base font-extrabold text-white">اشتراک این بخش به پایان رسیده است</h2>
+      <p class="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">برای ادامه استفاده، می‌توانید دمو را یک‌بار رایگان تمدید کنید یا اشتراک Plus / Pro تهیه نمایید.</p>
+      <div class="flex flex-wrap justify-center gap-2 pt-1">
+        <button id="btnPaywallExtend" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/40 text-cyan-300 text-xs font-bold">تمدید رایگان دمو (۱ بار)</button>
+        <button id="btnGoPlans" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-extrabold shadow-lg">مشاهده پلن‌های اشتراک</button>
+      </div>
+    </section>
+
+    <!-- TAB 1: CHART & ANALYSIS -->
+    <section id="tabAnalysis" class="tab-panel space-y-3">
+      <div class="card rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-slate-200">سبک‌های تحلیل فعال:</span>
+          <label class="flex items-center gap-1.5 text-xs text-cyan-300 cursor-pointer">
+            <input id="chkAutoCombo" type="checkbox" class="rounded" />
+            <span>تطبیقی با رژیم</span>
+          </label>
+        </div>
+        <div id="styleChips" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- Chart Card -->
+      <div id="chartCardWrapper" class="card rounded-2xl p-2.5 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div class="flex items-center gap-2">
+            <span id="lblPairTf" class="text-xs font-bold text-white num">BTCUSDT • 15m</span>
+            <span id="lblMarketBadge" class="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">FUTURES</span>
+            <span id="lblLivePrice" class="text-xs font-bold text-emerald-400 num">--</span>
+            <span id="lblChangePct" class="text-xs num text-slate-400">--</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button id="btnZoomIn" aria-label="بزرگ‌نمایی" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold flex items-center justify-center">+</button>
+            <button id="btnZoomOut" aria-label="کوچک‌نمایی" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold flex items-center justify-center">−</button>
+            <button id="btnZoomReset" class="px-2 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">ریست</button>
+            <button id="btnFullscreen" class="px-2.5 h-7 rounded-lg bg-blue-600/25 border border-blue-500/50 text-blue-200 text-xs font-semibold">⛶ تمام‌صفحه</button>
+          </div>
+        </div>
+        <div id="tvChartContainer" class="relative h-80 w-full rounded-xl overflow-hidden bg-[#070b14] border border-slate-800"></div>
+        <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
+          <span id="lblLastSync">آخرین دریافت: --</span>
+          <span>پنل حجم واقعی (Taker Delta) زیر کندل‌ها فعال است</span>
+        </div>
+      </div>
+
+      <div id="dynamicKpiGrid" class="grid grid-cols-2 gap-2"></div>
+      <div id="outputCard" class="card rounded-2xl p-3.5 space-y-3"></div>
+    </section>
+
+    <!-- TAB 2: RISK CALCULATOR -->
+    <section id="tabRisk" class="tab-panel hidden space-y-3">
+      <div class="card rounded-2xl p-3.5 space-y-3">
+        <h2 class="text-sm font-bold text-white">مدیریت سرمایه و محاسبه‌گر ریسک</h2>
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div><label for="inCap" class="text-slate-300 block mb-1">سرمایه (USDT)</label><input id="inCap" type="number" value="10000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inRiskPct" class="text-slate-300 block mb-1">ریسک هر معامله (%)</label><input id="inRiskPct" type="number" step="0.1" value="1.0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inDir" class="text-slate-300 block mb-1">جهت</label><select id="inDir" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white"><option value="LONG">LONG (خرید)</option><option value="SHORT">SHORT (فروش)</option></select></div>
+          <div><label for="inEntry" class="text-slate-300 block mb-1">قیمت ورود</label><input id="inEntry" type="number" step="0.01" value="65000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inSl" class="text-slate-300 block mb-1">حد ضرر (SL)</label><input id="inSl" type="number" step="0.01" value="64200" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inTp1" class="text-slate-300 block mb-1">هدف سود (TP1)</label><input id="inTp1" type="number" step="0.01" value="66800" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inLev" class="text-slate-300 block mb-1">اهرم درخواستی</label><input id="inLev" type="number" value="10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inMaxLev" class="text-slate-300 block mb-1">سقف اهرم مجاز</label><input id="inMaxLev" type="number" value="10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+        </div>
+        <button id="btnCalcRisk" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">محاسبه حجم و تخمین لیکوئیدیشن</button>
+      </div>
+      <div id="riskResultBox" class="card rounded-2xl p-3.5 space-y-2"></div>
+    </section>
+
+    <!-- TAB 3: COMPLETE TRADING JOURNAL -->
+    <section id="tabJournal" class="tab-panel hidden space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        <div class="card rounded-xl p-2.5 text-center"><div class="text-xs text-slate-400">دوره ۲۰ معامله</div><div id="jBlock" class="text-xs font-bold text-white mt-1">۰ از ۲۰</div></div>
+        <div class="card rounded-xl p-2.5 text-center"><div class="text-xs text-slate-400">نمره انضباط</div><div id="jAdh" class="text-xs font-bold text-cyan-300 mt-1 num">100%</div></div>
+        <div class="card rounded-xl p-2.5 text-center"><div class="text-xs text-slate-400">وضعیت حساب</div><div id="jLock" class="text-xs font-bold text-emerald-400 mt-1">آزاد</div></div>
+      </div>
+
+      <div class="card rounded-2xl p-3.5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">ثبت کامل پوزیشن در ژورنال</h2>
+          <button id="btnExportCsv" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-cyan-300">خروجی CSV</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+          <div><label for="inJSym" class="text-slate-400 block mb-1">نماد</label><input id="inJSym" type="text" value="BTCUSDT" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJDir" class="text-slate-400 block mb-1">جهت</label><select id="inJDir" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white"><option value="LONG">LONG</option><option value="SHORT">SHORT</option></select></div>
+          <div><label for="inJStrat" class="text-slate-400 block mb-1">سبک</label><input id="inJStrat" type="text" value="SMC + Volume" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white" /></div>
+          <div><label for="inJEntry" class="text-slate-400 block mb-1">قیمت ورود</label><input id="inJEntry" type="number" step="0.01" placeholder="65000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJExit" class="text-slate-400 block mb-1">قیمت خروج</label><input id="inJExit" type="number" step="0.01" placeholder="66200" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJSlPrice" class="text-slate-400 block mb-1">حد ضرر اولیه</label><input id="inJSlPrice" type="number" step="0.01" placeholder="64400" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJQty" class="text-slate-400 block mb-1">حجم (کوین)</label><input id="inJQty" type="number" step="0.0001" value="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJFee" class="text-slate-400 block mb-1">کارمزد ($)</label><input id="inJFee" type="number" step="0.1" value="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white num" /></div>
+          <div><label for="inJNote" class="text-slate-400 block mb-1">یادداشت / دلیل</label><input id="inJNote" type="text" placeholder="پولبک تمیز..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white" /></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJSl" type="checkbox" /> جابه‌جایی حد ضرر</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJVol" type="checkbox" /> نقض حجم مجاز</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJFomo" type="checkbox" /> ورود احساسی</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJFear" type="checkbox" /> خروج زودهنگام</label>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnAddJ" class="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">ثبت در ژورنال</button>
+          <button id="btnUnlockJ" class="px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs">ریست قفل</button>
+        </div>
+      </div>
+
+      <div id="journalList" class="card rounded-2xl p-3.5 space-y-2 text-xs"></div>
+    </section>
+
+    <!-- TAB 4: BACKTEST -->
+    <section id="tabBacktest" class="tab-panel hidden space-y-3">
+      <div class="card rounded-2xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-sm font-bold text-white">ارزیابی تاریخی (۱۰۰۰ کندل با HTF واقعی)</h2>
+          <span id="btPairTag" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-cyan-300 num">BTCUSDT • 15m</span>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">اجرا از کندل ۲۰۵ (پس از تکمیل EMA200) با بایاس واقعی تایم‌فریم بالاتر، کسر کارمزد و اسلیپج. نتایج گذشته تضمینی برای سود آینده نیست.</p>
+        <button id="btnRunBt" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">اجرای بک‌تست روی دیتای زنده صرافی</button>
+      </div>
+      <div id="btOutput" class="card rounded-2xl p-3.5 space-y-3"></div>
+    </section>
+
+    <!-- TAB 5: PROFILE & SUBSCRIPTIONS -->
+    <section id="tabProfile" class="tab-panel hidden space-y-3">
+      <div class="card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400">حساب کاربری</div>
+            <div id="profUserName" class="text-sm font-extrabold text-white mt-0.5">--</div>
+          </div>
+          <span id="profPlanBadge" class="text-xs px-3 py-1 rounded-full bg-blue-500/20 text-cyan-300 font-bold">دمو فعال</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-slate-400">دستیار تحلیل‌گر (Plus)</div>
+            <div id="profAnalystRem" class="font-bold text-emerald-400 mt-1">--</div>
+            <button id="btnExtAnalyst" class="mt-2 w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 font-semibold">تمدید دمو (+۷ روز)</button>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-slate-400">دستیار تریدر (Pro)</div>
+            <div id="profTraderRem" class="font-bold text-amber-300 mt-1">--</div>
+            <button id="btnExtTrader" class="mt-2 w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-amber-300 font-semibold">تمدید دمو (+۱ روز)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Server-Verified License Key Activation -->
+      <div class="card rounded-2xl p-4 space-y-2.5">
+        <h3 class="text-sm font-bold text-white">فعال‌سازی کلید اشتراک (تایید سمت سرور)</h3>
+        <div class="flex gap-2">
+          <input id="inLicenseKey" type="text" aria-label="کلید فعال‌سازی" placeholder="کلید فعال‌سازی (TA-...)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white num" />
+          <button id="btnActivateKey" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">تایید و فعال‌سازی</button>
+        </div>
+      </div>
+
+      <!-- Subscription Plans -->
+      <div class="card rounded-2xl p-4 space-y-3">
+        <div class="text-center space-y-1">
+          <h3 class="text-base font-extrabold text-white">ارتقا به اشتراک حرفه‌ای</h3>
+          <p class="text-xs text-slate-400">مدت اشتراک را انتخاب کنید و کلید اختصاصی خود را دریافت کنید</p>
+        </div>
+
+        <div id="cycleTabs" class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <button data-cycle="1M" class="cycle-btn py-1.5 rounded-lg bg-blue-600 text-white font-bold">۱ ماهه</button>
+          <button data-cycle="3M" class="cycle-btn py-1.5 rounded-lg text-slate-400 font-semibold">۳ ماهه</button>
+          <button data-cycle="6M" class="cycle-btn py-1.5 rounded-lg text-slate-400 font-semibold">۶ ماهه</button>
+          <button data-cycle="1Y" class="cycle-btn py-1.5 rounded-lg text-slate-400 font-semibold">۱ ساله</button>
+        </div>
+
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 space-y-1.5">
+          <div class="flex gap-2">
+            <input id="inDiscountCode" type="text" aria-label="کد تخفیف" placeholder="کد تخفیف خود را وارد کنید" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white num" />
+            <button id="btnApplyDiscount" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shrink-0">اعمال</button>
+          </div>
+          <div id="lblDiscountMsg" class="text-xs text-slate-400"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="rounded-2xl p-4 bg-slate-900/90 border border-slate-700 space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-extrabold text-cyan-300">اشتراک Plus (تحلیل‌گر)</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">تحلیل بازار</span>
+              </div>
+              <div class="flex items-baseline gap-1.5">
+                <span id="pricePlus" class="text-2xl font-extrabold text-white num">$1.99</span>
+                <span id="periodPlus" class="text-xs text-slate-400">/ ماهانه</span>
+              </div>
+              <ul class="text-xs text-slate-300 space-y-1.5 pt-1">
+                <li>✓ دسترسی کامل به <b>دستیار تحلیل‌گر</b> (بدون سیگنال)</li>
+                <li>✓ دیتای مجزای Spot و Futures + پنل حجم واقعی</li>
+                <li>✓ چارت تعاملی تمام‌صفحه با زوم و سطوح ساختار</li>
+                <li>✓ ماشین‌حساب ریسک و ژورنال کامل با خروجی CSV</li>
+              </ul>
+            </div>
+            <div class="space-y-1.5">
+              <button id="btnPayPlus" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition">پرداخت آنلاین آنی Plus</button>
+              <button id="btnBuyPlus" class="w-full py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition">خرید از تلگرام (@erf_kbl)</button>
+            </div>
+          </div>
+
+          <div class="rounded-2xl p-4 bg-gradient-to-b from-blue-950/80 to-slate-900 border-2 border-amber-400/70 space-y-3 flex flex-col justify-between shadow-lg">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-extrabold text-amber-300">اشتراک Pro (کامل)</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold">محبوب‌ترین ★</span>
+              </div>
+              <div class="flex items-baseline gap-1.5">
+                <span id="pricePro" class="text-2xl font-extrabold text-white num">$2.99</span>
+                <span id="periodPro" class="text-xs text-slate-400">/ ماهانه</span>
+              </div>
+              <ul class="text-xs text-slate-200 space-y-1.5 pt-1">
+                <li>✓ هر دو مود <b>دستیار تحلیل‌گر + دستیار تریدر</b></li>
+                <li>✓ ستاپ کامل ورود، SL ساختاری، TP1/TP2 و زمان اعتبار</li>
+                <li>✓ تحلیل همزمان SMC، وایکوف، والیوم (Taker Delta) و واگرایی</li>
+                <li>✓ بک‌تست چندتایم‌فریمی روی ۱۰۰۰ کندل صرافی</li>
+              </ul>
+            </div>
+            <div class="space-y-1.5">
+              <button id="btnPayPro" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold text-xs shadow-md transition">پرداخت آنلاین آنی Pro</button>
+              <button id="btnBuyPro" class="w-full py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs transition">خرید از تلگرام (@erf_kbl)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="liveInvoiceBox" class="hidden rounded-2xl p-3.5 bg-slate-950 border border-emerald-500/40 space-y-2.5 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-300">فاکتور پرداخت آماده شد</span>
+            <span id="lblInvMeta" class="num text-xs text-slate-400">--</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a id="lnkShieldzPay" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 text-center py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold">ورود به صفحه پرداخت</a>
+            <button id="btnVerifyInvoice" class="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold">بررسی پرداخت و فعال‌سازی</button>
+          </div>
+          <div id="lblVerifyStatus" class="text-xs text-slate-300">پس از پرداخت، روی «بررسی پرداخت و فعال‌سازی» بزنید.</div>
+        </div>
+      </div>
+
+      <!-- Legal / Risk Disclaimer -->
+      <footer class="card rounded-2xl p-3 text-xs text-slate-400 leading-relaxed">
+        <b>سلب مسئولیت ریسک:</b> این نرم‌افزار صرفاً یک ابزار کمکی تحلیل تکنیکال و مدیریت ریسک است و هیچ‌گونه توصیه مالی یا تضمین سودآوری ارائه نمی‌دهد. مسئولیت کامل معاملات بر عهده کاربر است.
+      </footer>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav aria-label="ناوبری اصلی" class="fixed bottom-0 inset-x-0 z-40 bg-[#0b111e]/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5">
+    <div class="max-w-5xl mx-auto grid grid-cols-5 gap-1">
+      <button data-tab="tabAnalysis" aria-current="page" class="nav-item active flex flex-col items-center py-1 text-xs font-semibold text-slate-400"><span>📊</span><span>چارت</span></button>
+      <button data-tab="tabRisk" class="nav-item flex flex-col items-center py-1 text-xs font-semibold text-slate-400"><span>⚖️</span><span>ریسک</span></button>
+      <button data-tab="tabJournal" class="nav-item flex flex-col items-center py-1 text-xs font-semibold text-slate-400"><span>📓</span><span>ژورنال</span></button>
+      <button data-tab="tabBacktest" class="nav-item flex flex-col items-center py-1 text-xs font-semibold text-slate-400"><span>📈</span><span>بک‌تست</span></button>
+      <button data-tab="tabProfile" class="nav-item flex flex-col items-center py-1 text-xs font-semibold text-slate-400"><span>👑</span><span>اشتراک</span></button>
+    </div>
+  </nav>
+
+  <script>
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwPPbjLcZlL_3FK8qbrEA9Pf2-u_f6bUkAkL14yNC_lxMFvEtXbzLUVvCZZ7OpFCFmJNA/exec';
+
+    const STYLES = [
+      { id: 'price_action', label: 'پرایس اکشن و ساختار' },
+      { id: 'classic_ta', label: 'تکنیکال کلاسیک' },
+      { id: 'momentum_mean_reversion', label: 'بازگشت به میانگین (رنج)' },
+      { id: 'volume', label: 'والیوم و اردرفلو' },
+      { id: 'breakout_volatility', label: 'شکست نوسان (Squeeze)' }
+    ];
+
+    const PRICING = {
+      '1M': { label: '۱ ماهه', plusNum: 1.99, proNum: 2.99, period: '/ ماهانه' },
+      '3M': { label: '۳ ماهه', plusNum: 5.39, proNum: 7.99, period: '/ ۳ ماه (۱۰٪ تخفیف)' },
+      '6M': { label: '۶ ماهه', plusNum: 9.99, proNum: 14.99, period: '/ ۶ ماه (۱۶٪ تخفیف)' },
+      '1Y': { label: '۱ ساله', plusNum: 17.99, proNum: 26.99, period: '/ سالانه (۲۵٪ تخفیف)' }
+    };
+
+    const PROMO_PREVIEW = {
+      WELCOME15: { pct: 15, tier: 'ALL', cycles: 'ALL' },
+      PRO25: { pct: 25, tier: 'PRO', cycles: ['3M', '6M', '1Y'] }
+    };
+
+    const state = {
+      activeTab: 'tabAnalysis',
+      symbol: 'BTCUSDT',
+      tf: '15m',
+      market: 'FUTURES',
+      mode: 'ANALYST',
+      autoCombo: false,
+      selectedStyles: new Set(['price_action', 'classic_ta', 'momentum_mean_reversion', 'volume', 'breakout_volatility']),
+      selectedCycle: '1M',
+      activeDiscount: null,
+      pendingInvoiceId: null,
+      isFullscreen: false,
+      dataHealthy: false,
+      bars: [],
+      htfBars: [],
+      analystReport: null,
+      traderSignal: null,
+      btTrades: [],
+      journal: [],
+      consecutiveLosses: 0,
+      locked: false,
+      user: null
+    };
+
+    let chart = null, candleSeries = null, volumeSeries = null, priceLines = [], livePollTimer = null;
+
+    function getDeviceId() {
+      try {
+        let id = localStorage.getItem('ta_device_id');
+        if (!id) { id = 'DEV-' + (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)); localStorage.setItem('ta_device_id', id); }
+        return id;
+      } catch (_) { return 'DEV-WEB'; }
+    }
+
+    function loadSavedState() {
+      try {
+        const u = localStorage.getItem('ta_user_v5');
+        if (u) state.user = JSON.parse(u);
+        const j = localStorage.getItem('ta_journal_v5');
+        if (j) {
+          const parsed = JSON.parse(j);
+          if (Array.isArray(parsed)) {
+            state.journal = parsed.filter(x => x && typeof x.netPnl === 'number' && typeof x.r === 'number');
+          }
+        }
+        const riskMeta = localStorage.getItem('ta_risk_meta_v5');
+        if (riskMeta) {
+          const rm = JSON.parse(riskMeta);
+          state.consecutiveLosses = Number(rm.consecutiveLosses) || 0;
+          state.locked = Boolean(rm.locked);
+        }
+        const prefs = localStorage.getItem('ta_prefs_v5');
+        if (prefs) {
+          const pr = JSON.parse(prefs);
+          if (Array.isArray(pr.styles) && pr.styles.length) state.selectedStyles = new Set(pr.styles);
+          if (pr.symbol) state.symbol = pr.symbol;
+          if (pr.tf) state.tf = pr.tf;
+          if (pr.market) state.market = pr.market;
+        }
+        const pendInv = localStorage.getItem('ta_pending_inv');
+        if (pendInv) state.pendingInvoiceId = pendInv;
+      } catch (_) {}
+      document.getElementById('selSymbol').value = state.symbol;
+      document.getElementById('selTimeframe').value = state.tf;
+      document.getElementById('selMarket').value = state.market;
+      if (!state.user) document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function saveUser() { try { localStorage.setItem('ta_user_v5', JSON.stringify(state.user)); } catch (_) {} }
+    function savePrefs() {
+      try {
+        localStorage.setItem('ta_prefs_v5', JSON.stringify({
+          symbol: state.symbol, tf: state.tf, market: state.market, styles: Array.from(state.selectedStyles)
+        }));
+      } catch (_) {}
+    }
+    function saveJournalState() {
+      try {
+        localStorage.setItem('ta_journal_v5', JSON.stringify(state.journal));
+        localStorage.setItem('ta_risk_meta_v5', JSON.stringify({ consecutiveLosses: state.consecutiveLosses, locked: state.locked }));
+      } catch (_) {}
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__t);
+      window.__t = setTimeout(() => el.classList.add('hidden'), 2400);
+    }
+
+    function hasAccess(mode) {
+      if (!state.user) return false;
+      const now = Date.now();
+      if (state.user.proUntil && state.user.proUntil > now) return true;
+      if (mode === 'ANALYST') return (state.user.plusUntil && state.user.plusUntil > now) || (state.user.analystDemoUntil > now);
+      return state.user.traderDemoUntil > now;
+    }
+
+    function fmtRemaining(ms) {
+      const diff = ms - Date.now();
+      if (diff <= 0) return 'منقضی شده';
+      const hrs = Math.ceil(diff / 3600000);
+      return hrs >= 24 ? `${Math.ceil(hrs / 24)} روز باقی‌مانده` : `${hrs} ساعت باقی‌مانده`;
+    }
+
+    function updateSubscriptionUI() {
+      if (!state.user) return;
+      const now = Date.now();
+      const isPro = state.user.proUntil && state.user.proUntil > now;
+      const isPlus = state.user.plusUntil && state.user.plusUntil > now;
+      const badge = document.getElementById('btnHeaderPlan');
+      const pBadge = document.getElementById('profPlanBadge');
+      if (isPro) { badge.textContent = 'Pro فعال ★'; pBadge.textContent = 'اشتراک Pro فعال'; }
+      else if (isPlus) { badge.textContent = 'Plus فعال'; pBadge.textContent = 'اشتراک Plus فعال'; }
+      else { badge.textContent = hasAccess('TRADER') ? 'دمو کامل' : (hasAccess('ANALYST') ? 'دمو تحلیل‌گر' : 'نیاز به اشتراک'); pBadge.textContent = badge.textContent; }
+
+      document.getElementById('profUserName').textContent = state.user.name || '--';
+      document.getElementById('profAnalystRem').textContent = isPro ? fmtRemaining(state.user.proUntil) : (isPlus ? fmtRemaining(state.user.plusUntil) : fmtRemaining(state.user.analystDemoUntil));
+      document.getElementById('profTraderRem').textContent = isPro ? fmtRemaining(state.user.proUntil) : fmtRemaining(state.user.traderDemoUntil);
+
+      const extA = document.getElementById('btnExtAnalyst');
+      const extT = document.getElementById('btnExtTrader');
+      extA.disabled = state.user.analystExtended || isPro || isPlus;
+      extA.textContent = state.user.analystExtended ? 'تمدید انجام شده' : 'تمدید رایگان (+۷ روز)';
+      extT.disabled = state.user.traderExtended || isPro;
+      extT.textContent = state.user.traderExtended ? 'تمدید انجام شده' : 'تمدید رایگان (+۱ روز)';
+      enforcePaywall();
+    }
+
+    function enforcePaywall() {
+      const gate = document.getElementById('paywallGate');
+      const needsGate = state.activeTab !== 'tabProfile' && state.user && !hasAccess(state.mode);
+      if (needsGate) {
+        gate.classList.remove('hidden');
+        document.getElementById(state.activeTab).classList.add('hidden');
+        const isTr = state.mode === 'TRADER';
+        document.getElementById('paywallTitle').textContent = isTr ? 'دموی دستیار تریدر تمام شده است' : 'دموی دستیار تحلیل‌گر تمام شده است';
+        document.getElementById('btnPaywallExtend').classList.toggle('hidden', isTr ? state.user.traderExtended : state.user.analystExtended);
+      } else {
+        gate.classList.add('hidden');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById(state.activeTab).classList.remove('hidden');
+      }
+    }
+
+    function initChart() {
+      const container = document.getElementById('tvChartContainer');
+      container.innerHTML = '';
+      if (typeof LightweightCharts === 'undefined') return;
+      chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+        layout: { background: { color: '#070b14' }, textColor: '#94a3b8', fontSize: 11 },
+        grid: { vertLines: { color: 'rgba(30,41,59,0.45)' }, horzLines: { color: 'rgba(30,41,59,0.45)' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.1, bottom: 0.22 } },
+        timeScale: { borderColor: '#1e293b', timeVisible: true, secondsVisible: false, rightOffset: 8 },
+        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+        handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true }
+      });
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#10b981', downColor: '#f43f5e',
+        borderUpColor: '#10b981', borderDownColor: '#f43f5e',
+        wickUpColor: '#10b981', wickDownColor: '#f43f5e'
+      });
+      volumeSeries = chart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: ''
+      });
+      volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    }
+
+    function htfOf(tf) {
+      if (tf === '5m') return '1h';
+      if (tf === '15m') return '1h';
+      if (tf === '1h') return '4h';
+      return '1d';
+    }
+
+    // TRUE SEPARATION: Spot -> api.binance.com/api/v3/klines | Futures -> fapi.binance.com/fapi/v1/klines
+    // Extracts real Taker Buy Volume (k[9]) for real Aggressor Volume Delta!
+    async function fetchBinanceKlines(symbol, market, interval, limit) {
+      const base = market === 'FUTURES' ? 'https://fapi.binance.com/fapi/v1/klines' : 'https://api.binance.com/api/v3/klines';
+      try {
+        const resp = await fetch(`${base}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const raw = await resp.json();
+        const now = Date.now();
+        return raw.map(k => {
+          const vol = +k[5];
+          const takerBuy = +k[9];
+          const takerSell = Math.max(0, vol - takerBuy);
+          return {
+            time: Math.floor(k[0] / 1000),
+            open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+            volume: vol,
+            takerBuyVol: takerBuy,
+            delta: takerBuy - takerSell,
+            closed: k[6] < now
+          };
+        });
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function loadMarketData() {
+      const st = document.getElementById('feedStatus');
+      const dot = document.getElementById('feedDot');
+      const banner = document.getElementById('staleBanner');
+      st.textContent = `در حال اتصال به Binance (${state.market})...`;
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+
+      const [ltf, htf] = await Promise.all([
+        fetchBinanceKlines(state.symbol, state.market, state.tf, 1000),
+        fetchBinanceKlines(state.symbol, state.market, htfOf(state.tf), 300)
+      ]);
+
+      if (!ltf || !htf || ltf.length < 210 || htf.length < 210) {
+        state.dataHealthy = false;
+        state.analystReport = null;
+        state.traderSignal = null;
+        st.textContent = 'قطع ارتباط با صرافی';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        banner.classList.remove('hidden');
+        document.getElementById('outputCard').innerHTML = '<div class="text-xs text-rose-400 font-bold">دیتای زنده صرافی در دسترس نیست. صدور تحلیل و سیگنال تا وصل شدن مجدد متوقف است.</div>';
+        return;
+      }
+
+      state.dataHealthy = true;
+      state.bars = ltf;
+      state.htfBars = htf;
+      banner.classList.add('hidden');
+      st.textContent = `متصل به Binance ${state.market} (زنده)`;
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      document.getElementById('lblLastSync').textContent = 'آخرین دریافت: ' + new Date().toLocaleTimeString('fa-IR');
+
+      runEnginesForCurrentMode();
+      startLiveCandlePolling();
+    }
+
+    function startLiveCandlePolling() {
+      if (livePollTimer) clearInterval(livePollTimer);
+      livePollTimer = setInterval(async () => {
+        if (!state.dataHealthy || !candleSeries || !state.bars.length) return;
+        const latest = await fetchBinanceKlines(state.symbol, state.market, state.tf, 2);
+        if (!latest || !latest.length) return;
+        const liveBar = latest[latest.length - 1];
+        const prevBar = latest.length > 1 ? latest[latest.length - 2] : null;
+
+        try {
+          candleSeries.update({ time: liveBar.time, open: liveBar.open, high: liveBar.high, low: liveBar.low, close: liveBar.close });
+          if (volumeSeries) {
+            volumeSeries.update({ time: liveBar.time, value: liveBar.volume, color: liveBar.delta >= 0 ? 'rgba(16,185,129,0.55)' : 'rgba(244,63,94,0.55)' });
+          }
+        } catch (_) {}
+
+        const refClose = prevBar ? prevBar.close : liveBar.open;
+        const chg = ((liveBar.close - refClose) / Math.max(1e-8, refClose)) * 100;
+        const pEl = document.getElementById('lblLivePrice');
+        const cEl = document.getElementById('lblChangePct');
+        if (pEl) {
+          pEl.textContent = `$${liveBar.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+          pEl.className = `text-xs font-bold num ${liveBar.close >= liveBar.open ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        if (cEl) {
+          cEl.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+          cEl.className = `text-xs num ${chg >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        document.getElementById('lblLastSync').textContent = 'آخرین دریافت: ' + new Date().toLocaleTimeString('fa-IR');
+
+        const lastIdx = state.bars.length - 1;
+        if (state.bars[lastIdx].time === liveBar.time) {
+          state.bars[lastIdx] = liveBar;
+        } else if (liveBar.time > state.bars[lastIdx].time) {
+          if (prevBar && state.bars[lastIdx].time === prevBar.time) state.bars[lastIdx] = { ...prevBar, closed: true };
+          state.bars.push(liveBar);
+          if (state.bars.length > 1020) state.bars.shift();
+          // Also refresh HTF closed bars on new bar close!
+          const freshHtf = await fetchBinanceKlines(state.symbol, state.market, htfOf(state.tf), 250);
+          if (freshHtf && freshHtf.length >= 210) state.htfBars = freshHtf;
+          runEnginesForCurrentMode();
+        }
+      }, 2000);
+    }
+
+    // Core Indicators
+    function calcEma(vals, p) {
+      const out = new Array(vals.length).fill(0);
+      const k = 2 / (p + 1);
+      let s = 0;
+      for (let i = 0; i < Math.min(vals.length, p); i++) { s += vals[i]; out[i] = s / (i + 1); }
+      for (let i = p; i < vals.length; i++) out[i] = (vals[i] - out[i - 1]) * k + out[i - 1];
+      return out;
+    }
+
+    function calcAtr(bars, p = 14) {
+      const tr = bars.map((b, i) => i === 0 ? b.high - b.low : Math.max(b.high - b.low, Math.abs(b.high - bars[i - 1].close), Math.abs(b.low - bars[i - 1].close)));
+      const out = new Array(bars.length).fill(0);
+      let s = 0;
+      for (let i = 0; i < Math.min(bars.length, p); i++) { s += tr[i]; out[i] = s / (i + 1); }
+      for (let i = p; i < bars.length; i++) out[i] = ((out[i - 1] * (p - 1)) + tr[i]) / p;
+      return out;
+    }
+
+    function calcRsi(closes, p = 14) {
+      const out = new Array(closes.length).fill(50);
+      if (closes.length <= p) return out;
+      let g = 0, l = 0;
+      for (let i = 1; i <= p; i++) { const d = closes[i] - closes[i - 1]; if (d > 0) g += d; else l -= d; }
+      let ag = g / p, al = l / p;
+      out[p] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+      for (let i = p + 1; i < closes.length; i++) {
+        const d = closes[i] - closes[i - 1];
+        ag = (ag * (p - 1) + (d > 0 ? d : 0)) / p;
+        al = (al * (p - 1) + (d < 0 ? -d : 0)) / p;
+        out[i] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+      }
+      return out;
+    }
+
+    // 3-State HTF Bias (+1 Bull, -1 Bear, 0 Neutral/Range) strictly on CLOSED HTF bars!
+    function computeHtfBiasAtTime(closedHtf, upToTime) {
+      const slice = closedHtf.filter(b => b.time <= upToTime);
+      if (slice.length < 205) return 0;
+      const c = slice.map(b => b.close);
+      const e50 = calcEma(c, 50), e200 = calcEma(c, 200);
+      const i = c.length - 1;
+      if (c[i] > e50[i] && e50[i] > e200[i]) return 1;
+      if (c[i] < e50[i] && e50[i] < e200[i]) return -1;
+      return 0;
+    }
+
+    // Confirmed 3-bar Swing Pivots (No Repainting)
+    function extractPivots(bars, upToIdx, span = 3) {
+      const highs = [], lows = [];
+      const end = upToIdx - span;
+      const start = Math.max(span, upToIdx - 120);
+      for (let i = start; i <= end; i++) {
+        let isH = true, isL = true;
+        for (let k = 1; k <= span; k++) {
+          if (bars[i].high <= bars[i - k].high || bars[i].high < bars[i + k].high) isH = false;
+          if (bars[i].low >= bars[i - k].low || bars[i].low > bars[i + k].low) isL = false;
+        }
+        if (isH) highs.push({ idx: i, price: bars[i].high, time: bars[i].time });
+        if (isL) lows.push({ idx: i, price: bars[i].low, time: bars[i].time });
+      }
+      return { highs, lows };
+    }
+
+    // Real Volume Profile (POC, VAH, VAL)
+    function calcVolumeProfile(bars, endIdx, lookback = 120, bins = 36) {
+      const slice = bars.slice(Math.max(0, endIdx - lookback + 1), endIdx + 1);
+      let minP = Infinity, maxP = -Infinity;
+      for (const b of slice) { if (b.low < minP) minP = b.low; if (b.high > maxP) maxP = b.high; }
+      if (maxP <= minP) return { poc: slice[slice.length - 1].close, vah: maxP, val: minP };
+      const step = (maxP - minP) / bins;
+      const binV = new Array(bins).fill(0);
+      let tot = 0;
+      for (const b of slice) {
+        const idx = Math.min(bins - 1, Math.max(0, Math.floor((b.close - minP) / step)));
+        binV[idx] += b.volume; tot += b.volume;
+      }
+      let pocIdx = 0;
+      for (let i = 1; i < bins; i++) if (binV[i] > binV[pocIdx]) pocIdx = i;
+      let acc = binV[pocIdx], lo = pocIdx, hi = pocIdx;
+      while (acc < tot * 0.70 && (lo > 0 || hi < bins - 1)) {
+        const u = hi < bins - 1 ? binV[hi + 1] : -1;
+        const d = lo > 0 ? binV[lo - 1] : -1;
+        if (u >= d) { hi++; acc += binV[hi]; } else { lo--; acc += binV[lo]; }
+      }
+      return { poc: minP + (pocIdx + 0.5) * step, vah: minP + (hi + 1) * step, val: minP + lo * step };
+    }
+
+    // ==================== PRISM ENGINE v6 (Audited Multi-Style Engine) ====================
+    function calcSma(vals, p) {
+      const out = new Array(vals.length).fill(NaN);
+      let sum = 0;
+      for (let i = 0; i < vals.length; i++) {
+        sum += vals[i];
+        if (i >= p) sum -= vals[i - p];
+        if (i >= p - 1) out[i] = sum / p;
+      }
+      return out;
+    }
+
+    function calcBollinger(closes, p = 20, mult = 2.0, pctLookback = 100) {
+      const n = closes.length;
+      const sma = calcSma(closes, p);
+      const bw = new Array(n).fill(NaN), up = new Array(n).fill(NaN), low = new Array(n).fill(NaN);
+      for (let i = p - 1; i < n; i++) {
+        let sq = 0;
+        for (let j = i - p + 1; j <= i; j++) { const d = closes[j] - sma[i]; sq += d * d; }
+        const sd = Math.sqrt(sq / p);
+        up[i] = sma[i] + mult * sd;
+        low[i] = sma[i] - mult * sd;
+        bw[i] = sma[i] > 0 ? ((up[i] - low[i]) / sma[i]) * 100 : 0;
+      }
+      return closes.map((_, i) => {
+        if (isNaN(bw[i])) return { mid: NaN, up: NaN, low: NaN, bw: NaN, bwPercentile: 50 };
+        const st = Math.max(0, i - pctLookback + 1);
+        let less = 0, eq = 0, cnt = 0;
+        for (let j = st; j <= i; j++) {
+          if (!isNaN(bw[j])) { cnt++; if (bw[j] < bw[i]) less++; else if (bw[j] === bw[i]) eq++; }
+        }
+        return { mid: sma[i], up: up[i], low: low[i], bw: bw[i], bwPercentile: cnt > 0 ? ((less + 0.5 * eq) / cnt) * 100 : 50 };
+      });
+    }
+
+    function calcMacdHist(closes) {
+      const e12 = calcEma(closes, 12), e26 = calcEma(closes, 26);
+      const macd = closes.map((_, i) => e12[i] - e26[i]);
+      const sig = calcEma(macd, 9);
+      return macd.map((m, i) => m - sig[i]);
+    }
+
+    function calcAtrPercentile(atrArr, idx, lookback = 100) {
+      const cur = atrArr[idx];
+      if (!cur || isNaN(cur)) return 0.5;
+      const st = Math.max(0, idx - lookback + 1);
+      let less = 0, eq = 0, cnt = 0;
+      for (let j = st; j <= idx; j++) {
+        if (atrArr[j] > 0 && !isNaN(atrArr[j])) { cnt++; if (atrArr[j] < cur) less++; else if (atrArr[j] === cur) eq++; }
+      }
+      return cnt < 2 ? 0.5 : (less + 0.5 * eq) / cnt;
+    }
+
+    function calcRvolPrior(bars, idx, lookback = 20) {
+      if (idx < lookback) return 1.0;
+      let s = 0;
+      for (let k = idx - lookback; k < idx; k++) s += bars[k].volume;
+      const avg = s / lookback;
+      return avg > 1e-9 ? bars[idx].volume / avg : 1.0;
+    }
+
+    function detectPrismContext(bars, idx, htfBias, ema50, atrArr) {
+      const atr = Math.max(1e-8, atrArr[idx]);
+      const volPercentile = calcAtrPercentile(atrArr, idx, 100);
+      const prevIdx = Math.max(0, idx - 10);
+      const slopeRatio = Math.abs(ema50[idx] - ema50[prevIdx]) / atr;
+      const regime = volPercentile > 0.85 ? 'VOLATILE' : (slopeRatio > 1.0 ? 'TREND' : 'RANGE');
+      const secDay = ((bars[idx].time % 86400) + 86400) % 86400;
+      const hr = Math.floor(secDay / 3600);
+      const session = hr <= 6 ? 'ASIA' : (hr <= 12 ? 'LONDON' : (hr <= 16 ? 'OVERLAP' : 'NEW_YORK'));
+      return { regime, volPercentile, htfBias, session, currentAtr: atr };
+    }
+
+    // Plugin 1: Price Action / Structure (confirmed 3-bar swings, zero look-ahead)
+    function analyzePriceAction(ctx, bars, idx, atrArr) {
+      const regimes = new Set(['TREND', 'VOLATILE']);
+      if (idx < 60) return { styleId: 'price_action', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const piv = extractPivots(bars, idx, 3);
+      if (piv.highs.length < 2 || piv.lows.length < 2) return { styleId: 'price_action', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const h1 = piv.highs[piv.highs.length - 2], h2 = piv.highs[piv.highs.length - 1];
+      const l1 = piv.lows[piv.lows.length - 2], l2 = piv.lows[piv.lows.length - 1];
+      const levels = [
+        { price: h2.price, label: 'آخرین سقف ساختاری' },
+        { price: l2.price, label: 'آخرین کف ساختاری' },
+        { price: h1.price, label: 'سقف ساختاری قبلی' },
+        { price: l1.price, label: 'کف ساختاری قبلی' }
+      ];
+      const atr = Math.max(1e-8, atrArr[idx]), last = bars[idx];
+      let bias = 0;
+      if (h2.price > h1.price && l2.price > l1.price) bias = 1;
+      else if (h2.price < h1.price && l2.price < l1.price) bias = -1;
+      if (bias === 0 || (bias === 1 && last.close < l2.price) || (bias === -1 && last.close > h2.price)) {
+        return { styleId: 'price_action', bias: 0, confidence: 0, evidence: [], keyLevels: levels, invalidation: null, suitableRegimes: regimes };
+      }
+      const ev = [{ text: bias === 1 ? 'ساختار صعودی HH + HL' : 'ساختار نزولی LH + LL', weight: 0.5 }];
+      let conf = 0.5;
+      const bos = bias === 1 ? last.close > h2.price : last.close < l2.price;
+      if (bos) { conf += 0.2; ev.push({ text: 'شکست ساختار (BOS) در جهت روند', weight: 0.7 }); }
+      const body = last.close - last.open;
+      if (Math.abs(body) > 1.2 * atr && (body > 0) === (bias === 1)) { conf += 0.1; ev.push({ text: 'کندل جابه‌جایی قوی (> 1.2 ATR)', weight: 0.6 }); }
+      if (ctx.htfBias === bias) { conf += 0.1; ev.push({ text: 'هم‌جهت با تایم‌فریم بالاتر', weight: 0.6 }); }
+      else if (ctx.htfBias !== 0) { conf -= 0.15; ev.push({ text: 'خلاف جهت تایم‌فریم بالاتر', weight: 0.6 }); }
+      const inv = bias === 1 ? l2.price - 0.25 * atr : h2.price + 0.25 * atr;
+      return { styleId: 'price_action', bias, confidence: Math.max(0, Math.min(0.9, conf)), evidence: ev, keyLevels: levels, invalidation: { price: inv, label: 'ابطال ساختار سوینگ' }, suitableRegimes: regimes };
+    }
+
+    // Plugin 2: Classic TA (EMA 20/50/200 + MACD + RSI, requires >= 220 bars)
+    function analyzeClassicTa(ctx, bars, idx, ema20, ema50, ema200, rsiArr, atrArr, macdHist) {
+      const regimes = new Set(['TREND']);
+      if (idx < 219) return { styleId: 'classic_ta', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const e20 = ema20[idx], e50 = ema50[idx], e200 = ema200[idx], rsi = rsiArr[idx], atr = atrArr[idx], hist = macdHist[idx], last = bars[idx].close;
+      const levels = [{ price: e20, label: 'EMA20' }, { price: e50, label: 'EMA50' }, { price: e200, label: 'EMA200' }];
+      let s = 0; const ev = [];
+      if (e20 > e50 && e50 > e200) { s += 0.4; ev.push({ text: 'چیدمان صعودی EMA20 > EMA50 > EMA200', weight: 0.7 }); }
+      else if (e20 < e50 && e50 < e200) { s -= 0.4; ev.push({ text: 'چیدمان نزولی EMA20 < EMA50 < EMA200', weight: 0.7 }); }
+      if (last > e50) { s += 0.2; ev.push({ text: 'قیمت بالای EMA50', weight: 0.4 }); }
+      else { s -= 0.2; ev.push({ text: 'قیمت زیر EMA50', weight: 0.4 }); }
+      if (hist > 0) { s += 0.2; ev.push({ text: 'هیستوگرام MACD مثبت', weight: 0.4 }); }
+      else { s -= 0.2; ev.push({ text: 'هیستوگرام MACD منفی', weight: 0.4 }); }
+      if (rsi >= 50 && rsi <= 68) s += 0.15;
+      else if (rsi >= 32 && rsi < 50) s -= 0.15;
+      if (rsi > 75) { s -= 0.2; ev.push({ text: 'RSI اشباع خرید (>75)', weight: 0.5 }); }
+      else if (rsi < 25) { s += 0.2; ev.push({ text: 'RSI اشباع فروش (<25)', weight: 0.5 }); }
+      const bias = s >= 0.4 ? 1 : (s <= -0.4 ? -1 : 0);
+      if (bias === 0) return { styleId: 'classic_ta', bias: 0, confidence: 0, evidence: [], keyLevels: levels, invalidation: null, suitableRegimes: regimes };
+      const inv = bias === 1 ? last - 1.5 * atr : last + 1.5 * atr;
+      return { styleId: 'classic_ta', bias, confidence: Math.min(0.9, Math.abs(s)), evidence: ev, keyLevels: levels, invalidation: { price: inv, label: 'ابطال 1.5 ATR' }, suitableRegimes: regimes };
+    }
+
+    // Plugin 3: Momentum / Mean Reversion (Range specialist: BB 20,2 + RSI + bounce confirm)
+    function analyzeMeanReversion(ctx, bars, idx, bbArr, rsiArr, atrArr) {
+      const regimes = new Set(['RANGE']);
+      if (idx < 50 || isNaN(bbArr[idx].mid)) return { styleId: 'momentum_mean_reversion', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const last = bars[idx], prev = bars[idx - 1], bb = bbArr[idx], pbb = bbArr[idx - 1], rsi = rsiArr[idx], prsi = rsiArr[idx - 1], atr = atrArr[idx];
+      const levels = [{ price: bb.up, label: 'باند بالای بولینگر' }, { price: bb.mid, label: 'میانگین بولینگر (SMA20)' }, { price: bb.low, label: 'باند پایین بولینگر' }];
+      const bullTouch = prev.low <= pbb.low || last.low <= bb.low;
+      const bullRsi = prsi <= 35 || rsi <= 35;
+      const bullConfirm = last.close >= bb.low && (last.close > last.open || rsi > prsi);
+      const bearTouch = prev.high >= pbb.up || last.high >= bb.up;
+      const bearRsi = prsi >= 65 || rsi >= 65;
+      const bearConfirm = last.close <= bb.up && (last.close < last.open || rsi < prsi);
+      if (bullTouch && bullRsi && bullConfirm) {
+        let conf = 0.5 + (rsi > prsi ? 0.15 : 0) + (last.close > last.open ? 0.1 : 0) + (ctx.regime === 'RANGE' ? 0.1 : 0);
+        const ev = [{ text: 'برخورد به باند پایین بولینگر و بازگشت', weight: 0.65 }, { text: `RSI اشباع فروش (${rsi.toFixed(0)})`, weight: 0.55 }];
+        return { styleId: 'momentum_mean_reversion', bias: 1, confidence: Math.min(0.9, conf), evidence: ev, keyLevels: levels, invalidation: { price: Math.min(last.low, prev.low) - 1.2 * atr, label: 'ابطال بازگشت به میانگین' }, suitableRegimes: regimes };
+      }
+      if (bearTouch && bearRsi && bearConfirm) {
+        let conf = 0.5 + (rsi < prsi ? 0.15 : 0) + (last.close < last.open ? 0.1 : 0) + (ctx.regime === 'RANGE' ? 0.1 : 0);
+        const ev = [{ text: 'برخورد به باند بالای بولینگر و بازگشت', weight: 0.65 }, { text: `RSI اشباع خرید (${rsi.toFixed(0)})`, weight: 0.55 }];
+        return { styleId: 'momentum_mean_reversion', bias: -1, confidence: Math.min(0.9, conf), evidence: ev, keyLevels: levels, invalidation: { price: Math.max(last.high, prev.high) + 1.2 * atr, label: 'ابطال بازگشت به میانگین' }, suitableRegimes: regimes };
+      }
+      return { styleId: 'momentum_mean_reversion', bias: 0, confidence: 0, evidence: [], keyLevels: levels, invalidation: null, suitableRegimes: regimes };
+    }
+
+    // Plugin 4: Volume & Order Flow (Real Binance Taker Delta + Causal Prior-20 RVOL + VP)
+    function analyzeVolumeStyle(ctx, bars, idx, atrArr, vp, vwap) {
+      const regimes = new Set(['TREND', 'VOLATILE', 'RANGE']);
+      if (idx < 40) return { styleId: 'volume', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const last = bars[idx], atr = Math.max(1e-8, atrArr[idx]);
+      const rvol = calcRvolPrior(bars, idx, 20);
+      let s5 = 0, s20 = 0;
+      for (let k = idx - 4; k <= idx; k++) s5 += bars[k].volume;
+      for (let k = idx - 19; k <= idx; k++) s20 += bars[k].volume;
+      const volRising = (s5 / 5) > (s20 / 20) * 1.1;
+      const deltaRatio = last.volume > 0 ? last.delta / last.volume : 0;
+      const barDir = last.close > last.open ? 1 : (last.close < last.open ? -1 : 0);
+      const levels = [{ price: vp.poc, label: 'POC' }, { price: vp.vah, label: 'VAH' }, { price: vp.val, label: 'VAL' }, { price: vwap, label: 'VWAP' }];
+      let sc = 0; const ev = [];
+      if (rvol >= 1.4 && barDir !== 0) { sc += barDir * 0.4; ev.push({ text: `حجم غیرعادی (${rvol.toFixed(1)}x میانگین ۲۰ کندل)`, weight: 0.75 }); }
+      const net3 = last.close - bars[idx - 3].close;
+      if (volRising && Math.abs(net3) > 0.5 * atr) { sc += (net3 > 0 ? 1 : -1) * 0.2; ev.push({ text: 'روند حجم صعودی پشت حرکت قیمت', weight: 0.55 }); }
+      if (Math.abs(deltaRatio) >= 0.14) { sc += (deltaRatio > 0 ? 1 : -1) * 0.25; ev.push({ text: deltaRatio > 0 ? `برتری خریداران تیکر (+${(deltaRatio * 100).toFixed(0)}٪)` : `برتری فروشندگان تیکر (${(deltaRatio * 100).toFixed(0)}٪)`, weight: 0.65 }); }
+      if (last.close > vwap && deltaRatio > 0.08) sc += 0.1;
+      else if (last.close < vwap && deltaRatio < -0.08) sc -= 0.1;
+      const bias = sc >= 0.4 ? 1 : (sc <= -0.4 ? -1 : 0);
+      if (bias === 0) return { styleId: 'volume', bias: 0, confidence: 0, evidence: [], keyLevels: levels, invalidation: null, suitableRegimes: regimes };
+      const inv = bias === 1 ? last.low - 1.0 * atr : last.high + 1.0 * atr;
+      return { styleId: 'volume', bias, confidence: Math.min(0.9, Math.abs(sc)), evidence: ev, keyLevels: levels, invalidation: { price: inv, label: 'ابطال کندل حجم' }, suitableRegimes: regimes };
+    }
+
+    // Plugin 5: Breakout & Volatility Compression (Squeeze bwPercentile <= 30.0 + Prior-20 Range Break + RVOL >= 1.3)
+    function analyzeBreakoutVolatility(ctx, bars, idx, bbArr, atrArr) {
+      const regimes = new Set(['VOLATILE', 'TREND']);
+      if (idx < 60) return { styleId: 'breakout_volatility', bias: 0, confidence: 0, evidence: [], keyLevels: [], invalidation: null, suitableRegimes: regimes };
+      const last = bars[idx], atr = Math.max(1e-8, atrArr[idx]);
+      let pH = -Infinity, pL = Infinity;
+      for (let k = idx - 20; k < idx; k++) { if (bars[k].high > pH) pH = bars[k].high; if (bars[k].low < pL) pL = bars[k].low; }
+      const mid = (pH + pL) * 0.5;
+      const levels = [{ price: pH, label: 'سقف رنج ۲۰ کندلی' }, { price: mid, label: 'میانه رنج' }, { price: pL, label: 'کف رنج ۲۰ کندلی' }];
+      let recentSqueeze = false;
+      for (let k = idx - 5; k < idx; k++) if (bbArr[k].bwPercentile <= 30.0) { recentSqueeze = true; break; }
+      const rvol = calcRvolPrior(bars, idx, 20);
+      const bullBreak = last.close > pH && last.close > last.open;
+      const bearBreak = last.close < pL && last.close < last.open;
+      if ((!bullBreak && !bearBreak) || rvol < 1.3) return { styleId: 'breakout_volatility', bias: 0, confidence: 0, evidence: [], keyLevels: levels, invalidation: null, suitableRegimes: regimes };
+      const bias = bullBreak ? 1 : -1;
+      let conf = 0.5 + (recentSqueeze ? 0.2 : 0) + (Math.abs(last.close - last.open) >= atr ? 0.1 : 0) + (ctx.htfBias === bias ? 0.1 : 0);
+      const ev = [
+        { text: bias === 1 ? 'شکست سقف رنج ۲۰ کندلی با کلوز' : 'شکست کف رنج ۲۰ کندلی با کلوز', weight: 0.7 },
+        { text: `تایید حجم شکست (RVOL ${rvol.toFixed(1)}x)`, weight: 0.65 }
+      ];
+      if (recentSqueeze) ev.push({ text: 'خروج از فشردگی نوسان (Squeeze)', weight: 0.75 });
+      const inv = bias === 1 ? Math.min(mid, last.close - 1.5 * atr) : Math.max(mid, last.close + 1.5 * atr);
+      return { styleId: 'breakout_volatility', bias, confidence: Math.min(0.9, conf), evidence: ev, keyLevels: levels, invalidation: { price: inv, label: 'ابطال شکست رنج' }, suitableRegimes: regimes };
+    }
+
+    // Consensus Core
+    function runPrismConsensus(ctx, verdicts) {
+      if (!verdicts.length) return { bias: 0, confidence: 0, agreement: 0, conflicts: [], verdicts: [], contributingStyles: [] };
+      const weights = verdicts.map(v => (v.suitableRegimes.has(ctx.regime) ? 1.0 : 0.4));
+      const totalW = weights.reduce((a, b) => a + b, 0) || 1;
+      const score = verdicts.reduce((acc, v, i) => acc + weights[i] * v.confidence * v.bias, 0) / totalW;
+      const bias = score > 0.25 ? 1 : (score < -0.25 ? -1 : 0);
+      const agreeW = bias === 0 ? 0 : verdicts.reduce((acc, v, i) => acc + (v.bias === bias ? weights[i] : 0), 0);
+      const conflicts = [];
+      if (verdicts.some(v => v.bias === 1) && verdicts.some(v => v.bias === -1)) conflicts.push('اختلاف جهت بین سبک‌ها');
+      if (bias !== 0 && ctx.htfBias !== 0 && ctx.htfBias !== bias) conflicts.push('خلاف جهت تایم‌فریم بالاتر');
+      if (ctx.regime === 'VOLATILE' && ctx.volPercentile > 0.95) conflicts.push('نوسان بیش‌ازحد بازار (ریسک اسپایک)');
+      const contributingStyles = bias === 0 ? [] : verdicts.filter(v => v.bias === bias).map(v => v.styleId);
+      return { bias, confidence: Math.min(1, Math.abs(score)), agreement: agreeW / totalW, conflicts, verdicts, contributingStyles };
+    }
+
+    // AnalysisRenderer (Strict Analyst Mode: Narrative + 3 Scenarios summing to 100% + Key Levels + What Changes My Mind — ZERO Entry/SL/TP!)
+    function renderPrismAnalysis(ctx, cons, last) {
+      const regFa = ctx.regime === 'TREND' ? 'رونددار' : (ctx.regime === 'RANGE' ? 'رنج و متعادل' : 'پرنوسان');
+      const htfFa = ctx.htfBias === 1 ? 'صعودی' : (ctx.htfBias === -1 ? 'نزولی' : 'خنثی');
+      const biasFa = cons.bias === 1 ? 'صعودی' : (cons.bias === -1 ? 'نزولی' : 'خنثی (بدون برتری قطعی)');
+      const summary = `رژیم فعلی بازار «${regFa}» (پرسنتایل نوسان ${(ctx.volPercentile * 100).toFixed(0)}٪) و بایاس تایم‌فریم بالاتر «${htfFa}» است. برآیند اجماع سبک‌ها «${biasFa}» با اطمینان ${(cons.confidence * 100).toFixed(0)}٪ و همنظری ${(cons.agreement * 100).toFixed(0)}٪ است.` + (cons.conflicts.length ? ` هشدار تضاد: ${cons.conflicts.join('، ')}.` : '');
+
+      const pen = cons.conflicts.length ? 0.12 : 0;
+      const str = Math.max(0, Math.min(0.7, cons.confidence * 0.65 + cons.agreement * 0.35 - pen));
+      let pBull, pBase, pBear;
+      if (cons.bias === 1) { pBull = Math.min(0.75, Math.max(0.35, 0.42 + str * 0.45)); pBase = Math.min(0.40, Math.max(0.15, 0.36 - str * 0.25)); pBear = Math.max(0.08, 1 - pBull - pBase); }
+      else if (cons.bias === -1) { pBear = Math.min(0.75, Math.max(0.35, 0.42 + str * 0.45)); pBase = Math.min(0.40, Math.max(0.15, 0.36 - str * 0.25)); pBull = Math.max(0.08, 1 - pBear - pBase); }
+      else { pBase = ctx.regime === 'RANGE' ? 0.52 : 0.44; pBull = Math.max(0.10, (1 - pBase) * 0.5 + ctx.htfBias * 0.06); pBear = Math.max(0.10, 1 - pBase - pBull); }
+      const sSum = pBull + pBase + pBear;
+      pBull = Math.round((pBull / sSum) * 100); pBear = Math.round((pBear / sSum) * 100); pBase = 100 - pBull - pBear;
+
+      const scenarios = [
+        { name: 'سناریوی صعودی', prob: pBull, desc: cons.bias === 1 ? 'حفظ ساختار فعلی و حرکت به سمت مقاومت‌های کلیدی بالاتر.' : 'بازپس‌گیری سطوح کلیدی بالاتر در صورت افزایش تقاضا.' },
+        { name: 'سناریوی پایه (خنثی/تثبیت)', prob: pBase, desc: ctx.regime === 'RANGE' ? 'تداوم نوسان در محدوده تعادل فعلی تا خروج قطعی.' : 'استراحت موقت و اصلاح زمانی بدون شکست ساختار.' },
+        { name: 'سناریوی نزولی', prob: pBear, desc: cons.bias === -1 ? 'ادامه فشار عرضه و حرکت به سمت حمایت‌های پایین‌تر.' : 'از دست رفتن حمایت‌های نزدیک و تغییر کاراکتر بازار.' }
+      ];
+
+      const minGap = Math.max(1e-6, ctx.currentAtr * 0.15);
+      const rawLvls = cons.verdicts.flatMap(v => v.keyLevels).filter(l => l && !isNaN(l.price) && l.price > 0).sort((a, b) => Math.abs(a.price - last.close) - Math.abs(b.price - last.close));
+      const levels = [];
+      for (const l of rawLvls) { if (!levels.some(u => Math.abs(u.price - l.price) < minGap)) levels.push(l); if (levels.length >= 6) break; }
+      levels.sort((a, b) => b.price - a.price);
+
+      const invs = cons.verdicts.filter(v => v.bias === cons.bias && cons.bias !== 0 && v.invalidation).map(v => v.invalidation);
+      const whatChanges = [];
+      if (cons.bias === 1 && invs.length) { const k = invs.reduce((a, b) => b.price > a.price ? b : a); whatChanges.push(`بسته شدن کندل زیر سطح ابطال ساختاری (${k.price.toFixed(2)}) دیدگاه صعودی را باطل می‌کند.`); }
+      else if (cons.bias === -1 && invs.length) { const k = invs.reduce((a, b) => b.price < a.price ? b : a); whatChanges.push(`بسته شدن کندل بالای سطح ابطال ساختاری (${k.price.toFixed(2)}) دیدگاه نزولی را باطل می‌کند.`); }
+      else whatChanges.push('خروج قطعی قیمت از رنج همراه با حجم بالا (RVOL > 1.4) وضعیت خنثی را تغییر می‌دهد.');
+      if (ctx.htfBias !== 0) whatChanges.push('چرخش بایاس تایم‌فریم بالاتر، اولویت جهت بازار را بازتعریف می‌کند.');
+      if (cons.conflicts.length) whatChanges.push(`رفع تضادهای فعلی (${cons.conflicts.join('، ')}) پیش‌شرط اعتبارسنجی جهت بعدی است.`);
+
+      return { summary, scenarios, levels, whatChanges };
+    }
+
+    // TradeRenderer (Strict 7 Gates + Structural SL >= 1 ATR + Real Key-Level TPs + Net-After-Fee RR)
+    function runPrismTradeRenderer(ctx, cons, last) {
+      if (cons.bias === 0) return { ok: false, reason: 'جهت مشخص نیست' };
+      if (state.market === 'SPOT' && cons.bias === -1) return { ok: false, reason: 'پوزیشن SHORT در بازار Spot مجاز نیست' };
+      if (ctx.regime === 'VOLATILE') return { ok: false, reason: 'رژیم بازار (پرنوسان) مجاز به معامله نیست' };
+      if (cons.conflicts.length) return { ok: false, reason: cons.conflicts[0] };
+      if (cons.confidence < 0.35) return { ok: false, reason: 'اطمینان اجماع کمتر از حد مجاز (۳۵٪) است' };
+      if (cons.agreement < 0.65) return { ok: false, reason: 'همنظری سبک‌ها کمتر از حد مجاز (۶۵٪) است' };
+      const agreeing = cons.verdicts.filter(v => v.bias === cons.bias);
+      const reqStyles = ctx.regime === 'RANGE' ? 2 : 3;
+      if (agreeing.length < reqStyles) return { ok: false, reason: `تعداد سبک‌های همنظر (${agreeing.length}) کمتر از حداقل (${reqStyles}) است` };
+
+      const entry = last.close, atr = ctx.currentAtr, dir = cons.bias;
+      const paInv = agreeing.find(v => v.styleId === 'price_action')?.invalidation?.price;
+      const validStops = agreeing.map(v => v.invalidation?.price).filter(p => p && (dir === 1 ? p < entry : p > entry));
+      const rawStop = (paInv && (dir === 1 ? paInv < entry : paInv > entry)) ? paInv : (validStops.length ? (dir === 1 ? Math.max(...validStops) : Math.min(...validStops)) : null);
+      if (!rawStop) return { ok: false, reason: 'نقطه ابطال ساختاری معتبر یافت نشد' };
+
+      const stop = dir === 1 ? Math.min(rawStop, entry - atr) : Math.max(rawStop, entry + atr);
+      const risk = Math.abs(entry - stop);
+      if (risk <= 1e-8) return { ok: false, reason: 'فاصله حد ضرر نامعتبر است' };
+
+      // Real key-level targets in profit direction
+      const cands = cons.verdicts.flatMap(v => v.keyLevels).map(l => l.price).filter(p => !isNaN(p) && (p - entry) * dir >= risk).sort((a, b) => Math.abs(a - entry) - Math.abs(b - entry));
+      const tps = [];
+      for (const p of cands) { if (!tps.length || Math.abs(p - tps[tps.length - 1]) >= 0.5 * risk) tps.push(p); if (tps.length === 3) break; }
+      const mults = [1.5, 2.5, 4.0];
+      while (tps.length < 3) {
+        const std = entry + dir * risk * mults[tps.length];
+        const nextMin = tps.length ? tps[tps.length - 1] + dir * risk : std;
+        tps.push(dir === 1 ? Math.max(std, nextMin) : Math.min(std, nextMin));
+      }
+
+      // Net-after-fee RR (0.1% round-trip fee + 0.08% slippage)
+      const costPerUnit = entry * 0.0018;
+      const netRr = (Math.abs(tps[1] - entry) - costPerUnit) / (risk + costPerUnit);
+      if (netRr < 1.5) return { ok: false, reason: `نسبت RR خالص (${netRr.toFixed(2)}) کمتر از ۱.۵ است` };
+
+      const reasons = [...new Set(agreeing.flatMap(v => v.evidence).sort((a, b) => b.weight - a.weight).map(e => e.text))].slice(0, 5);
+      return {
+        ok: true, dir: dir === 1 ? 'LONG' : 'SHORT',
+        entry, entryLow: entry - 0.15 * atr, entryHigh: entry + 0.15 * atr,
+        sl: stop, tp1: tps[0], tp2: tps[1], tp3: tps[2],
+        rr: netRr, confidence: cons.confidence, agreement: cons.agreement,
+        validBars: 4, reasons
+      };
+    }
+
+    function evaluatePrismAtBar(closedLtf, idx, htfBias, activeStyles, ema20, ema50, ema200, atrArr, rsiArr, bbArr, macdHist) {
+      const b = closedLtf[idx];
+      const ctx = detectPrismContext(closedLtf, idx, htfBias, ema50, atrArr);
+      const day = Math.floor(b.time / 86400);
+      let sIdx = idx;
+      while (sIdx > 0 && Math.floor(closedLtf[sIdx - 1].time / 86400) === day) sIdx--;
+      let cpv = 0, cv = 0;
+      for (let k = sIdx; k <= idx; k++) { const tp = (closedLtf[k].high + closedLtf[k].low + closedLtf[k].close) / 3; cpv += tp * closedLtf[k].volume; cv += closedLtf[k].volume; }
+      const vwap = cv > 0 ? cpv / cv : b.close;
+      const vp = calcVolumeProfile(closedLtf, idx, 120, 36);
+
+      const verdicts = [];
+      if (activeStyles.has('price_action')) verdicts.push(analyzePriceAction(ctx, closedLtf, idx, atrArr));
+      if (activeStyles.has('classic_ta')) verdicts.push(analyzeClassicTa(ctx, closedLtf, idx, ema20, ema50, ema200, rsiArr, atrArr, macdHist));
+      if (activeStyles.has('momentum_mean_reversion')) verdicts.push(analyzeMeanReversion(ctx, closedLtf, idx, bbArr, rsiArr, atrArr));
+      if (activeStyles.has('volume')) verdicts.push(analyzeVolumeStyle(ctx, closedLtf, idx, atrArr, vp, vwap));
+      if (activeStyles.has('breakout_volatility')) verdicts.push(analyzeBreakoutVolatility(ctx, closedLtf, idx, bbArr, atrArr));
+
+      const cons = runPrismConsensus(ctx, verdicts);
+      const analysis = renderPrismAnalysis(ctx, cons, b);
+      const rvol = calcRvolPrior(closedLtf, idx, 20);
+      const deltaRatio = b.volume > 0 ? b.delta / b.volume : 0;
+      const piv = extractPivots(closedLtf, idx, 3);
+      const lastH = piv.highs.length ? piv.highs[piv.highs.length - 1].price : b.high;
+      const lastL = piv.lows.length ? piv.lows[piv.lows.length - 1].price : b.low;
+
+      return { ctx, cons, analysis, vwap, vp, rvol, deltaRatio, lastH, lastL, close: b.close, activeStyles };
+    }
+
+    function runEnginesForCurrentMode() {
+      if (!state.dataHealthy) return;
+      const closedLtf = state.bars.filter(b => b.closed);
+      const closedHtf = state.htfBars.filter(b => b.closed);
+      if (closedLtf.length < 225 || closedHtf.length < 205) return;
+
+      const closes = closedLtf.map(b => b.close);
+      const ema20 = calcEma(closes, 20), ema50 = calcEma(closes, 50), ema200 = calcEma(closes, 200);
+      const atrArr = calcAtr(closedLtf, 14), rsiArr = calcRsi(closes, 14);
+      const bbArr = calcBollinger(closes, 20, 2.0, 100), macdHist = calcMacdHist(closes);
+      const lastIdx = closedLtf.length - 1;
+      const htfBias = computeHtfBiasAtTime(closedHtf, closedLtf[lastIdx].time);
+
+      const allPrism = new Set(STYLES.map(s => s.id));
+      const activeStyles = state.autoCombo ? allPrism : state.selectedStyles;
+
+      const rep = evaluatePrismAtBar(closedLtf, lastIdx, htfBias, activeStyles, ema20, ema50, ema200, atrArr, rsiArr, bbArr, macdHist);
+      state.analystReport = rep;
+
+      if (state.mode === 'TRADER') {
+        const res = runPrismTradeRenderer(rep.ctx, rep.cons, closedLtf[lastIdx]);
+        state.traderSignal = res.ok ? res : null;
+        state.noTradeReason = res.ok ? null : res.reason;
+        if (state.traderSignal) {
+          document.getElementById('inEntry').value = state.traderSignal.entry.toFixed(2);
+          document.getElementById('inSl').value = state.traderSignal.sl.toFixed(2);
+          document.getElementById('inTp1').value = state.traderSignal.tp1.toFixed(2);
+          document.getElementById('inDir').value = state.traderSignal.dir;
+        }
+      } else {
+        state.traderSignal = null;
+        state.noTradeReason = null;
+      }
+
+      renderStyleChips(activeStyles);
+      renderAnalysisUI();
+      updateChart();
+      calculateRisk();
+    }
+
+    function updateChart() {
+      if (!chart || !candleSeries) initChart();
+      if (!chart || !candleSeries || !state.bars.length || !state.analystReport) return;
+
+      candleSeries.setData(state.bars.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+      if (volumeSeries) {
+        volumeSeries.setData(state.bars.map(b => ({
+          time: b.time, value: b.volume,
+          color: b.delta >= 0 ? 'rgba(16,185,129,0.5)' : 'rgba(244,63,94,0.5)'
+        })));
+      }
+
+      priceLines.forEach(pl => { try { candleSeries.removePriceLine(pl); } catch (_) {} });
+      priceLines = [];
+      const addLine = (price, color, title, style = 2) => {
+        if (!price || isNaN(price)) return;
+        priceLines.push(candleSeries.createPriceLine({ price, color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title }));
+      };
+
+      const a = state.analystReport;
+      addLine(a.vwap, '#38bdf8', 'VWAP', 1);
+      addLine(a.vp.poc, '#fbbf24', 'POC', 2);
+      addLine(a.lastH, '#e879f9', 'مقاومت', 2);
+      addLine(a.lastL, '#34d399', 'حمایت', 2);
+
+      if (state.mode === 'TRADER' && state.traderSignal) {
+        const s = state.traderSignal;
+        addLine(s.entry, '#22d3ee', 'ورود', 0);
+        addLine(s.sl, '#f43f5e', 'SL', 0);
+        addLine(s.tp1, '#10b981', 'TP1', 0);
+        addLine(s.tp2, '#4ade80', 'TP2', 2);
+      }
+
+      if (state.mode === 'TRADER' && state.btTrades.length) {
+        candleSeries.setMarkers(state.btTrades.slice(-20).map(t => ({
+          time: t.entryTime, position: t.dir === 'LONG' ? 'belowBar' : 'aboveBar',
+          color: t.dir === 'LONG' ? '#10b981' : '#f43f5e', shape: t.dir === 'LONG' ? 'arrowUp' : 'arrowDown',
+          text: t.dir === 'LONG' ? 'BUY' : 'SELL'
+        })));
+      } else {
+        candleSeries.setMarkers([]);
+      }
+
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, state.bars.length - 85), to: state.bars.length + 6 });
+    }
+
+    function renderStyleChips(activeStyles) {
+      const box = document.getElementById('styleChips');
+      box.innerHTML = STYLES.map(s => {
+        const on = activeStyles.has(s.id);
+        return `<button data-sid="${s.id}" class="style-chip text-xs px-2.5 py-1.5 rounded-full border transition ${on ? 'bg-blue-600 border-blue-400 text-white font-bold' : 'bg-slate-900 border-slate-800 text-slate-400'}">${s.label}</button>`;
+      }).join('');
+      box.querySelectorAll('.style-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (state.autoCombo) {
+            state.autoCombo = false;
+            document.getElementById('chkAutoCombo').checked = false;
+            state.selectedStyles = new Set(activeStyles);
+          }
+          const id = btn.dataset.sid;
+          if (state.selectedStyles.has(id) && state.selectedStyles.size > 1) state.selectedStyles.delete(id);
+          else state.selectedStyles.add(id);
+          savePrefs();
+          runEnginesForCurrentMode();
+        });
+      });
+    }
+
+    function renderAnalysisUI() {
+      const a = state.analystReport;
+      if (!a) return;
+      document.getElementById('lblPairTf').textContent = `${state.symbol} • ${state.tf}`;
+      document.getElementById('lblMarketBadge').textContent = state.market;
+      document.getElementById('btPairTag').textContent = `${state.symbol} (${state.market}) • ${state.tf}`;
+
+      const regText = a.ctx.regime === 'TREND' ? 'رونددار (TREND)' : (a.ctx.regime === 'RANGE' ? 'رنج (RANGE)' : 'پرنوسان (VOLATILE)');
+      const htfText = a.ctx.htfBias === 1 ? 'صعودی' : (a.ctx.htfBias === -1 ? 'نزولی' : 'خنثی / رنج');
+      const htfCol = a.ctx.htfBias === 1 ? 'text-emerald-400' : (a.ctx.htfBias === -1 ? 'text-rose-400' : 'text-amber-300');
+
+      const kpis = [
+        { t: 'رژیم بازار (Prism)', v: regText, c: a.ctx.regime === 'VOLATILE' ? 'text-rose-300' : 'text-cyan-300' },
+        { t: `تایم‌فریم بالاتر (${htfOf(state.tf)})`, v: htfText, c: htfCol },
+        { t: 'اطمینان / همنظری', v: `${(a.cons.confidence * 100).toFixed(0)}% • ${(a.cons.agreement * 100).toFixed(0)}%`, c: 'text-amber-300' },
+        { t: 'Taker Delta / RVOL', v: `${(a.deltaRatio * 100).toFixed(0)}% • ${a.rvol.toFixed(2)}x`, c: a.deltaRatio >= 0 ? 'text-emerald-300' : 'text-rose-300' }
+      ];
+
+      document.getElementById('dynamicKpiGrid').innerHTML = kpis.map(k => `
+        <div class="card rounded-xl p-2.5">
+          <div class="text-xs text-slate-400">${k.t}</div>
+          <div class="text-xs font-bold ${k.c} mt-1 truncate">${k.v}</div>
+        </div>
+      `).join('');
+
+      const card = document.getElementById('outputCard');
+      if (state.mode === 'ANALYST') {
+        const bCls = a.cons.bias === 1 ? 'bg-emerald-500/20 text-emerald-300' : (a.cons.bias === -1 ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300');
+        const bLbl = a.cons.bias === 1 ? 'برآیند صعودی' : (a.cons.bias === -1 ? 'برآیند نزولی' : 'خنثی / تعادلی');
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">گزارش دستیار تحلیل‌گر (Prism Engine)</h3>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${bCls}">${bLbl}</span>
+          </div>
+          <p class="text-xs text-slate-200 leading-relaxed bg-slate-900/90 border border-slate-800 rounded-xl p-3">${a.analysis.summary}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            ${a.analysis.scenarios.map(sc => `
+              <div class="bg-slate-900 rounded-xl p-2.5 border border-slate-800">
+                <div class="flex justify-between font-bold text-white"><span>${sc.name}</span><span class="num text-cyan-300">${sc.prob}%</span></div>
+                <div class="text-slate-400 mt-1 leading-relaxed">${sc.desc}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            ${a.analysis.levels.map(lv => `
+              <div class="bg-slate-900/80 rounded-lg px-2.5 py-1.5 border border-slate-800 flex justify-between">
+                <span class="text-slate-400">${lv.label}</span><span class="num font-bold text-slate-100">${lv.price.toFixed(2)}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="bg-slate-900/70 border border-amber-500/25 rounded-xl p-2.5 text-xs space-y-1">
+            <div class="font-bold text-amber-300">چه چیزی نظرم را عوض می‌کند؟</div>
+            ${a.analysis.whatChanges.map(w => `<div class="text-slate-300">• ${w}</div>`).join('')}
+          </div>
+        `;
+      } else {
+        if (state.locked) {
+          card.innerHTML = '<div class="text-xs text-rose-400 font-bold">قفل محافظت از سرمایه فعال است (۳ ضرر متوالی). از تب ژورنال قفل را ریست کنید.</div>';
+          return;
+        }
+        const s = state.traderSignal;
+        if (s) {
+          const isL = s.dir === 'LONG';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold ${isL ? 'text-emerald-400' : 'text-rose-400'}">سیگنال تاییدشده Prism (${s.dir})</h3>
+              <span class="text-xs px-2.5 py-0.5 rounded-full ${isL ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} num font-bold">RR خالص: ${s.rr.toFixed(2)} • اطمینان ${(s.confidence * 100).toFixed(0)}%</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div class="bg-slate-900 border border-cyan-500/30 rounded-xl p-2.5"><div class="text-slate-400">ناحیه ورود</div><div class="num font-bold text-cyan-300 mt-1">${s.entry.toFixed(2)}</div></div>
+              <div class="bg-slate-900 border border-rose-500/30 rounded-xl p-2.5"><div class="text-slate-400">حد ضرر ساختاری</div><div class="num font-bold text-rose-400 mt-1">${s.sl.toFixed(2)}</div></div>
+              <div class="bg-slate-900 border border-emerald-500/30 rounded-xl p-2.5"><div class="text-slate-400">هدف ۱ / ۲</div><div class="num font-bold text-emerald-400 mt-1">${s.tp1.toFixed(2)} / ${s.tp2.toFixed(2)}</div></div>
+              <div class="bg-slate-900 border border-emerald-500/20 rounded-xl p-2.5"><div class="text-slate-400">هدف ۳ (TP3)</div><div class="num font-bold text-emerald-300 mt-1">${s.tp3.toFixed(2)}</div></div>
+            </div>
+            <div class="text-xs text-slate-300 bg-slate-900/80 rounded-xl p-2.5 space-y-1">
+              ${s.reasons.map(r => `<div>• ${r}</div>`).join('')}
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-amber-300">دستیار تریدر (Prism) — NoTrade</h3>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300">گیت مسدود</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">دلیل عدم صدور سیگنال: <strong class="text-white">${state.noTradeReason || 'همگرایی کافی وجود ندارد'}</strong></p>
+          `;
+        }
+      }
+    }
+
+    function runBacktest() {
+      if (!state.dataHealthy) { showToast('دیتای صرافی متصل نیست'); return; }
+      const closedLtf = state.bars.filter(b => b.closed);
+      const closedHtf = state.htfBars.filter(b => b.closed);
+      if (closedLtf.length < 250 || closedHtf.length < 210) {
+        document.getElementById('btOutput').innerHTML = '<div class="text-xs text-amber-300">حداقل ۲۵۰ کندل بسته برای اجرای کامل Prism و EMA200 نیاز است.</div>';
+        return;
+      }
+
+      const closes = closedLtf.map(b => b.close);
+      const ema20 = calcEma(closes, 20), ema50 = calcEma(closes, 50), ema200 = calcEma(closes, 200);
+      const atrArr = calcAtr(closedLtf, 14), rsiArr = calcRsi(closes, 14);
+      const bbArr = calcBollinger(closes, 20, 2.0, 100), macdHist = calcMacdHist(closes);
+      const allPrism = new Set(STYLES.map(s => s.id));
+      const styles = state.autoCombo ? allPrism : state.selectedStyles;
+
+      let equity = 10000, peak = 10000, maxDd = 0;
+      const trades = [];
+      const slip = 0.0004, fee = 0.0005;
+      let i = 225;
+
+      while (i < closedLtf.length - 2) {
+        const htfBias = computeHtfBiasAtTime(closedHtf, closedLtf[i].time);
+        const rep = evaluatePrismAtBar(closedLtf, i, htfBias, styles, ema20, ema50, ema200, atrArr, rsiArr, bbArr, macdHist);
+        const sig = runPrismTradeRenderer(rep.ctx, rep.cons, closedLtf[i]);
+        if (!sig.ok) { i++; continue; }
+
+        const eIdx = i + 1;
+        const fill = sig.dir === 'LONG' ? closedLtf[eIdx].open * (1 + slip) : closedLtf[eIdx].open * (1 - slip);
+        if ((sig.dir === 'LONG' && sig.sl >= fill) || (sig.dir === 'SHORT' && sig.sl <= fill)) { i++; continue; }
+
+        const riskUsd = Math.max(10, equity * 0.01);
+        const qty = riskUsd / (Math.abs(fill - sig.sl) + 2 * fill * fee);
+        let rem = qty, tp1Hit = false, sl = sig.sl, gross = 0, fees = fill * qty * fee, exIdx = Math.min(closedLtf.length - 1, eIdx + 36);
+
+        for (let k = eIdx; k <= exIdx; k++) {
+          const bk = closedLtf[k];
+          if (sig.dir === 'LONG') {
+            if (bk.low <= sl) { const ex = Math.min(bk.open, sl) * (1 - slip); gross += (ex - fill) * rem; fees += ex * rem * fee; rem = 0; exIdx = k; break; }
+            if (!tp1Hit && bk.high >= sig.tp1) {
+              const pQty = rem * 0.50; const ex = sig.tp1 * (1 - slip);
+              gross += (ex - fill) * pQty; fees += ex * pQty * fee; rem -= pQty; tp1Hit = true; sl = fill;
+            } else if (tp1Hit && bk.high >= sig.tp2) {
+              const ex = sig.tp2 * (1 - slip); gross += (ex - fill) * rem; fees += ex * rem * fee; rem = 0; exIdx = k; break;
+            }
+          } else {
+            if (bk.high >= sl) { const ex = Math.max(bk.open, sl) * (1 + slip); gross += (fill - ex) * rem; fees += ex * rem * fee; rem = 0; exIdx = k; break; }
+            if (!tp1Hit && bk.low <= sig.tp1) {
+              const pQty = rem * 0.50; const ex = sig.tp1 * (1 + slip);
+              gross += (fill - ex) * pQty; fees += ex * pQty * fee; rem -= pQty; tp1Hit = true; sl = fill;
+            } else if (tp1Hit && bk.low <= sig.tp2) {
+              const ex = sig.tp2 * (1 + slip); gross += (fill - ex) * rem; fees += ex * rem * fee; rem = 0; exIdx = k; break;
+            }
+          }
+        }
+        if (rem > 0) {
+          const ex = closedLtf[exIdx].close;
+          gross += sig.dir === 'LONG' ? (ex - fill) * rem : (fill - ex) * rem;
+          fees += ex * rem * fee;
+        }
+        const net = gross - fees;
+        equity += net;
+        if (equity > peak) peak = equity;
+        if (peak > 0) maxDd = Math.max(maxDd, ((peak - equity) / peak) * 100);
+        trades.push({ dir: sig.dir, entryTime: closedLtf[eIdx].time, entry: fill, net, r: net / riskUsd, conf: sig.confidence });
+        i = exIdx + 1;
+      }
+
+      state.btTrades = trades;
+      if (state.mode === 'TRADER') updateChart();
+
+      const tot = trades.length;
+      const wins = trades.filter(t => t.net > 0).length;
+      const wr = tot ? (wins / tot) * 100 : 0;
+      const grossW = trades.filter(t => t.net > 0).reduce((a, t) => a + t.net, 0);
+      const grossL = Math.abs(trades.filter(t => t.net < 0).reduce((a, t) => a + t.net, 0));
+      const pfStr = tot === 0 ? '--' : (grossL === 0 ? '∞' : (grossW / grossL).toFixed(2));
+      const retPct = ((equity - 10000) / 10000) * 100;
+      const avgConf = tot ? (trades.reduce((a, t) => a + t.conf, 0) / tot) * 100 : 0;
+
+      document.getElementById('btOutput').innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">معاملات Prism</div><div class="num font-bold text-white mt-1">${tot}</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">نرخ برد واقعی</div><div class="num font-bold text-cyan-300 mt-1">${wr.toFixed(1)}%</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">بازده خالص</div><div class="num font-bold ${retPct >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-1">${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">Profit Factor</div><div class="num font-bold text-amber-300 mt-1">${pfStr}</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">حداکثر افت سرمایه</div><div class="num font-bold text-rose-400 mt-1">${maxDd.toFixed(2)}%</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">اطمینان اعلامی vs برد</div><div class="num font-bold text-white mt-1">${avgConf.toFixed(0)}% / ${wr.toFixed(0)}%</div></div>
+        </div>
+        ${tot < 15 ? '<div class="text-xs text-amber-300">گیت‌های سخت‌گیرانه Prism تعداد معاملات را فیلتر کرده‌اند؛ برای نمونه آماری بزرگ‌تر روی چند جفت‌ارز تست کنید.</div>' : ''}
+      `;
+      showToast('بک‌تست Prism Engine با HTF واقعی انجام شد');
+    }
+
+    function calculateRisk() {
+      const cap = +document.getElementById('inCap').value, riskPct = +document.getElementById('inRiskPct').value;
+      const dir = document.getElementById('inDir').value, entry = +document.getElementById('inEntry').value;
+      const sl = +document.getElementById('inSl').value, tp1 = +document.getElementById('inTp1').value;
+      const reqLev = +document.getElementById('inLev').value, maxLev = +document.getElementById('inMaxLev').value;
+      const out = document.getElementById('riskResultBox');
+
+      if (state.market === 'SPOT' && dir === 'SHORT') {
+        out.innerHTML = '<div class="text-xs text-rose-400">در بازار Spot امکان باز کردن پوزیشن SHORT وجود ندارد.</div>';
+        return;
+      }
+      if (!cap || cap <= 0 || !riskPct || riskPct <= 0 || riskPct > 25 || !entry || entry <= 0 || !sl || sl <= 0 || !tp1 || tp1 <= 0 || reqLev < 1 || maxLev < 1) {
+        out.innerHTML = '<div class="text-xs text-rose-400">لطفاً تمام اعداد را به‌درستی و مثبت وارد کنید (ریسک بین ۰.۱ تا ۲۵ درصد).</div>';
+        return;
+      }
+      if ((dir === 'LONG' && (sl >= entry || tp1 <= entry)) || (dir === 'SHORT' && (sl <= entry || tp1 >= entry))) {
+        out.innerHTML = '<div class="text-xs text-rose-400">جایگاه حد ضرر (SL) یا هدف سود (TP1) با جهت معامله سازگار نیست.</div>';
+        return;
+      }
+
+      const riskUsd = cap * (riskPct / 100);
+      const lossPerUnit = Math.abs(entry - sl) + (entry + sl) * 0.0008;
+      const qty = riskUsd / lossPerUnit;
+      const notional = qty * entry;
+      let lev = state.market === 'SPOT' ? 1 : Math.min(reqLev, maxLev);
+      let liq = null;
+      if (state.market === 'FUTURES') {
+        const mmr = notional > 250000 ? 0.01 : (notional > 50000 ? 0.005 : 0.004);
+        const stopPct = Math.abs(entry - sl) / entry;
+        lev = Math.min(lev, Math.max(1, Math.floor(1 / (stopPct * 1.35 + mmr))));
+        liq = dir === 'LONG' ? entry * (1 - 1 / lev + mmr) : entry * (1 + 1 / lev - mmr);
+      }
+      const margin = notional / lev;
+      const rewardUsd = qty * (dir === 'LONG' ? (tp1 - entry) : (entry - tp1));
+      const rr = rewardUsd / riskUsd;
+
+      out.innerHTML = `
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">حجم پیشنهادی</div><div class="num font-bold text-white mt-1">${qty.toFixed(5)}</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">اهرم تخمینی / مارجین</div><div class="num font-bold text-cyan-300 mt-1">${lev}x • $${margin.toFixed(1)}</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">تخمین تقریبی لیکوئیدیشن (Isolated)</div><div class="num font-bold text-rose-400 mt-1">${liq ? '$' + liq.toFixed(2) : 'Spot'}</div></div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5"><div class="text-slate-400">ریسک دلاری / R:R</div><div class="num font-bold text-emerald-400 mt-1">$${riskUsd.toFixed(1)} • ${rr.toFixed(2)}R</div></div>
+        </div>
+      `;
+    }
+
+    // XSS-SAFE Journal Renderer (uses createElement + textContent, zero innerHTML injection!)
+    function renderJournal() {
+      const list = state.journal;
+      const inBlock = list.length === 0 ? 0 : ((list.length - 1) % 20) + 1;
+      document.getElementById('jBlock').textContent = `${inBlock} از ۲۰ (کل: ${list.length})`;
+      const adh = list.length ? list.reduce((a, x) => a + (Number(x.adh) || 100), 0) / list.length : 100;
+      document.getElementById('jAdh').textContent = `${adh.toFixed(0)}%`;
+      const lk = document.getElementById('jLock');
+      lk.textContent = state.locked ? 'قفل استراحت' : `آزاد (${state.consecutiveLosses} ضرر)`;
+      lk.className = `text-xs font-bold mt-1 ${state.locked ? 'text-rose-400' : 'text-emerald-400'}`;
+
+      const container = document.getElementById('journalList');
+      container.textContent = '';
+      if (!list.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-slate-400';
+        empty.textContent = 'هنوز معامله‌ای در ژورنال ثبت نشده است.';
+        container.appendChild(empty);
+        return;
+      }
+
+      list.slice().reverse().forEach((t, revIdx) => {
+        const origIdx = list.length - 1 - revIdx;
+        const row = document.createElement('div');
+        row.className = 'bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 space-y-1';
+
+        const top = document.createElement('div');
+        top.className = 'flex items-center justify-between gap-2';
+
+        const left = document.createElement('span');
+        left.className = 'font-bold text-white num';
+        left.textContent = `${t.sym} ${t.dir} • ${t.strat}`;
+
+        const right = document.createElement('span');
+        right.className = `num font-bold ${t.netPnl > 0 ? 'text-emerald-400' : (t.netPnl < 0 ? 'text-rose-400' : 'text-slate-300')}`;
+        right.textContent = `${t.r >= 0 ? '+' : ''}${t.r.toFixed(2)}R ($${t.netPnl.toFixed(1)})`;
+
+        top.appendChild(left);
+        top.appendChild(right);
+
+        const bot = document.createElement('div');
+        bot.className = 'flex items-center justify-between text-slate-400';
+
+        const info = document.createElement('span');
+        info.textContent = `ورود ${t.entry} → خروج ${t.exit} | انضباط ${t.adh}%${t.note ? ' | ' + t.note : ''}`;
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'text-rose-400 hover:text-rose-300 px-1.5';
+        delBtn.textContent = 'حذف';
+        delBtn.addEventListener('click', () => {
+          state.journal.splice(origIdx, 1);
+          saveJournalState();
+          renderJournal();
+        });
+
+        bot.appendChild(info);
+        bot.appendChild(delBtn);
+        row.appendChild(top);
+        row.appendChild(bot);
+        container.appendChild(row);
+      });
+    }
+
+    function calcDiscountedPrice(tier, cycle) {
+      const p = PRICING[cycle];
+      const base = tier === 'PRO' ? p.proNum : p.plusNum;
+      const d = state.activeDiscount;
+      if (!d) return { base, final: base, pct: 0, code: '' };
+      const tierOk = d.tier === 'ALL' || d.tier === tier;
+      const cycleOk = d.cycles === 'ALL' || d.cycles.includes(cycle);
+      if (!tierOk || !cycleOk) return { base, final: base, pct: 0, code: '' };
+      return { base, final: Math.max(0.5, Math.round(base * (1 - d.pct / 100) * 100) / 100), pct: d.pct, code: d.code };
+    }
+
+    function renderPlanPrices() {
+      const p = PRICING[state.selectedCycle];
+      const plusP = calcDiscountedPrice('PLUS', state.selectedCycle);
+      const proP = calcDiscountedPrice('PRO', state.selectedCycle);
+      document.getElementById('pricePlus').textContent = `$${plusP.final.toFixed(2)}`;
+      document.getElementById('periodPlus').textContent = plusP.pct > 0 ? `${p.period} (با ${plusP.pct}٪ تخفیف)` : p.period;
+      document.getElementById('pricePro').textContent = `$${proP.final.toFixed(2)}`;
+      document.getElementById('periodPro').textContent = proP.pct > 0 ? `${p.period} (با ${proP.pct}٪ تخفیف)` : p.period;
+    }
+
+    function isAllowedPayUrl(url) {
+      try {
+        const u = new URL(url);
+        return u.protocol === 'https:' && (u.hostname === 'shieldz.cash' || u.hostname.endsWith('.shieldz.cash'));
+      } catch (_) { return false; }
+    }
+
+    async function createLiveShieldzPayment(tier) {
+      const planCode = `${tier}_${state.selectedCycle}`;
+      const calc = calcDiscountedPrice(tier, state.selectedCycle);
+      const box = document.getElementById('liveInvoiceBox');
+      const stEl = document.getElementById('lblVerifyStatus');
+      const metaEl = document.getElementById('lblInvMeta');
+      const lnk = document.getElementById('lnkShieldzPay');
+
+      showToast('در حال ساخت فاکتور پرداخت...');
+      try {
+        const resp = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'shieldz_create_invoice',
+            nonce: (crypto.randomUUID ? crypto.randomUUID() : ('n-' + Date.now())),
+            timestamp_utc: new Date().toISOString(),
+            user_id: state.user ? state.user.name : 'WEB_USER',
+            plan_code: planCode,
+            discount_code: calc.code || ''
+          })
+        });
+        const data = await resp.json();
+        if (!data || !data.ok || !isAllowedPayUrl(data.pay_url)) {
+          box.classList.remove('hidden');
+          stEl.textContent = 'خطا در ساخت فاکتور: ' + (data && (data.error || data.message) ? (data.error || data.message) : 'پاسخ نامعتبر');
+          return;
+        }
+        state.pendingInvoiceId = data.invoice_id;
+        try { localStorage.setItem('ta_pending_inv', data.invoice_id); } catch (_) {}
+        metaEl.textContent = `${planCode} • $${Number(data.final_price_usd).toFixed(2)}`;
+        lnk.href = data.pay_url;
+        stEl.textContent = 'فاکتور ساخته شد. پس از پرداخت، روی «بررسی پرداخت و فعال‌سازی» بزنید.';
+        box.classList.remove('hidden');
+        window.open(data.pay_url, '_blank', 'noopener,noreferrer');
+      } catch (_) {
+        box.classList.remove('hidden');
+        stEl.textContent = 'ارتباط با سرور پرداخت برقرار نشد. از خرید تلگرام استفاده کنید یا دوباره تلاش نمایید.';
+      }
+    }
+
+    async function verifyLiveShieldzPayment() {
+      if (!state.pendingInvoiceId) { showToast('ابتدا یک فاکتور پرداخت بسازید'); return; }
+      const stEl = document.getElementById('lblVerifyStatus');
+      stEl.textContent = 'در حال استعلام وضعیت پرداخت از سرور...';
+      try {
+        const resp = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'shieldz_verify_invoice', invoice_id: state.pendingInvoiceId })
+        });
+        const data = await resp.json();
+        if (data && data.ok && (data.status === 'PAID_AND_FULFILLED' || data.status === 'ALREADY_FULFILLED')) {
+          const days = Math.min(365, Math.max(1, Number(data.duration_days) || 30));
+          const tier = data.plan_tier === 'PLUS' ? 'PLUS' : (data.plan_tier === 'PRO' ? 'PRO' : null);
+          if (!tier) { stEl.textContent = 'پاسخ سطح اشتراک نامعتبر است.'; return; }
+          const now = Date.now();
+          if (tier === 'PLUS') state.user.plusUntil = now + days * 86400000;
+          else state.user.proUntil = now + days * 86400000;
+          saveUser(); updateSubscriptionUI();
+          stEl.textContent = `پرداخت تایید شد و اشتراک ${tier} فعال گردید!${data.license_key ? ' کلید: ' + data.license_key : ''}`;
+          showToast('اشتراک شما فعال شد!');
+        } else {
+          stEl.textContent = `وضعیت فاکتور: ${(data && (data.status || data.error)) || 'در انتظار پرداخت'}`;
+        }
+      } catch (_) {
+        stEl.textContent = 'خطا در استعلام پرداخت.';
+      }
+    }
+
+    function openTelegramPurchase(planName) {
+      const p = PRICING[state.selectedCycle];
+      const calc = calcDiscountedPrice(planName, state.selectedCycle);
+      const uName = state.user ? state.user.name : 'کاربر جدید';
+      const discLine = calc.pct > 0 ? `\nکد تخفیف: ${calc.code} (${calc.pct}٪)` : '';
+      const msg = `سلام، درخواست خرید اشتراک ${planName} (${p.label} - $${calc.final.toFixed(2)}) برای دستیار تریدر دارم.${discLine}\nنام کاربری: ${uName}`;
+      window.open(`https://t.me/erf_kbl?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+    }
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.nav-item').forEach(n => {
+        const active = n.dataset.tab === tabId;
+        n.classList.toggle('active', active);
+        if (active) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
+      });
+      document.getElementById('topControlBar').classList.toggle('hidden', tabId === 'tabProfile');
+      enforcePaywall();
+      if (tabId === 'tabAnalysis' && chart) {
+        setTimeout(() => { const c = document.getElementById('tvChartContainer'); chart.resize(c.clientWidth, c.clientHeight); }, 50);
+      }
+    }
+
+    // Event Wiring
+    document.getElementById('btnCompleteReg').addEventListener('click', () => {
+      const name = document.getElementById('inRegName').value.trim();
+      const errEl = document.getElementById('lblRegError');
+      if (name.length < 2) { errEl.classList.remove('hidden'); document.getElementById('inRegName').focus(); return; }
+      errEl.classList.add('hidden');
+      const now = Date.now();
+      state.user = { name, analystDemoUntil: now + 7 * 86400000, traderDemoUntil: now + 86400000, analystExtended: false, traderExtended: false, plusUntil: 0, proUntil: 0 };
+      saveUser(); document.getElementById('authModal').classList.add('hidden'); updateSubscriptionUI();
+      showToast('دموی ۷ روزه تحلیل‌گر و ۱ روزه تریدر فعال شد');
+    });
+
+    document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.getElementById('btnHeaderPlan').addEventListener('click', () => switchTab('tabProfile'));
+    document.getElementById('btnGoPlans').addEventListener('click', () => switchTab('tabProfile'));
+
+    document.getElementById('btnModeAnalyst').addEventListener('click', () => {
+      state.mode = 'ANALYST';
+      document.getElementById('btnModeAnalyst').className = 'py-2 rounded-lg text-xs font-bold bg-blue-600 text-white transition';
+      document.getElementById('btnModeTrader').className = 'py-2 rounded-lg text-xs font-bold text-slate-400 transition';
+      enforcePaywall(); runEnginesForCurrentMode();
+    });
+    document.getElementById('btnModeTrader').addEventListener('click', () => {
+      state.mode = 'TRADER';
+      document.getElementById('btnModeTrader').className = 'py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 transition';
+      document.getElementById('btnModeAnalyst').className = 'py-2 rounded-lg text-xs font-bold text-slate-400 transition';
+      enforcePaywall(); runEnginesForCurrentMode();
+    });
+
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+      state.isFullscreen = !state.isFullscreen;
+      document.getElementById('chartCardWrapper').classList.toggle('chart-fullscreen', state.isFullscreen);
+      document.getElementById('btnFullscreen').textContent = state.isFullscreen ? '✕ بستن' : '⛶ تمام‌صفحه';
+      setTimeout(() => { if (chart) { const c = document.getElementById('tvChartContainer'); chart.resize(c.clientWidth, c.clientHeight); } }, 60);
+    });
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      if (!chart) return; const r = chart.timeScale().getVisibleLogicalRange(); if (!r) return;
+      chart.timeScale().setVisibleLogicalRange({ from: r.to - Math.max(15, (r.to - r.from) * 0.72), to: r.to });
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      if (!chart) return; const r = chart.timeScale().getVisibleLogicalRange(); if (!r) return;
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, r.to - (r.to - r.from) * 1.38), to: r.to });
+    });
+    document.getElementById('btnZoomReset').addEventListener('click', () => {
+      if (!chart) return; const n = state.bars.length;
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 85), to: n + 6 });
+    });
+
+    document.querySelectorAll('.cycle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.selectedCycle = btn.dataset.cycle;
+        document.querySelectorAll('.cycle-btn').forEach(b => {
+          b.className = b.dataset.cycle === state.selectedCycle ? 'cycle-btn py-1.5 rounded-lg bg-blue-600 text-white font-bold' : 'cycle-btn py-1.5 rounded-lg text-slate-400 font-semibold';
+        });
+        renderPlanPrices();
+      });
+    });
+
+    document.getElementById('btnApplyDiscount').addEventListener('click', () => {
+      const code = document.getElementById('inDiscountCode').value.trim().toUpperCase();
+      const msgEl = document.getElementById('lblDiscountMsg');
+      if (!code) { state.activeDiscount = null; msgEl.textContent = ''; renderPlanPrices(); return; }
+      const found = PROMO_PREVIEW[code];
+      if (!found) {
+        state.activeDiscount = { code, pct: 0, tier: 'ALL', cycles: 'ALL' };
+        msgEl.textContent = 'کد ثبت شد و هنگام ساخت فاکتور در سرور بررسی و اعمال می‌شود.';
+        msgEl.className = 'text-xs text-cyan-300';
+      } else {
+        state.activeDiscount = { code, ...found };
+        msgEl.textContent = `کد ${code} (${found.pct}٪ تخفیف) اعمال شد.`;
+        msgEl.className = 'text-xs text-emerald-400 font-semibold';
+      }
+      renderPlanPrices();
+    });
+
+    // Server-side License Activation (NO client-side fake regex bypass!)
+    document.getElementById('btnActivateKey').addEventListener('click', async () => {
+      const raw = document.getElementById('inLicenseKey').value.trim().toUpperCase();
+      if (!/^TA-(PRO|PLUS)-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/.test(raw)) {
+        showToast('فرمت کلید نامعتبر است');
+        return;
+      }
+      showToast('در حال اعتبارسنجی کلید با سرور...');
+      try {
+        const resp = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'verify_license_key', license_key: raw, user_id: state.user ? state.user.name : 'USER', device_id: getDeviceId() })
+        });
+        const data = await resp.json();
+        if (data && data.ok && data.status === 'ACTIVE') {
+          const expMs = data.expires_at_utc ? new Date(data.expires_at_utc).getTime() : (Date.now() + 30 * 86400000);
+          if (data.plan_tier === 'PLUS') state.user.plusUntil = expMs;
+          else if (data.plan_tier === 'PRO') state.user.proUntil = expMs;
+          saveUser(); updateSubscriptionUI();
+          showToast(`اشتراک ${data.plan_tier} با موفقیت فعال شد!`);
+        } else {
+          showToast('کلید نامعتبر یا منقضی است: ' + (data && data.error ? data.error : 'تایید نشد'));
+        }
+      } catch (_) {
+        showToast('خطا در اتصال به سرور لایسنس');
+      }
+    });
+
+    function extendDemo(mode) {
+      if (!state.user) return;
+      const now = Date.now();
+      if (mode === 'ANALYST' && !state.user.analystExtended) {
+        state.user.analystDemoUntil = Math.max(now, state.user.analystDemoUntil) + 7 * 86400000;
+        state.user.analystExtended = true; saveUser(); updateSubscriptionUI(); showToast('دموی تحلیل‌گر ۷ روز تمدید شد');
+      } else if (mode === 'TRADER' && !state.user.traderExtended) {
+        state.user.traderDemoUntil = Math.max(now, state.user.traderDemoUntil) + 86400000;
+        state.user.traderExtended = true; saveUser(); updateSubscriptionUI(); showToast('دموی تریدر ۱ روز تمدید شد');
+      }
+    }
+
+    document.getElementById('btnExtAnalyst').addEventListener('click', () => extendDemo('ANALYST'));
+    document.getElementById('btnExtTrader').addEventListener('click', () => extendDemo('TRADER'));
+    document.getElementById('btnPaywallExtend').addEventListener('click', () => extendDemo(state.mode));
+    document.getElementById('btnPayPlus').addEventListener('click', () => createLiveShieldzPayment('PLUS'));
+    document.getElementById('btnPayPro').addEventListener('click', () => createLiveShieldzPayment('PRO'));
+    document.getElementById('btnVerifyInvoice').addEventListener('click', verifyLiveShieldzPayment);
+    document.getElementById('btnBuyPlus').addEventListener('click', () => openTelegramPurchase('PLUS'));
+    document.getElementById('btnBuyPro').addEventListener('click', () => openTelegramPurchase('PRO'));
+
+    document.getElementById('selSymbol').addEventListener('change', e => { state.symbol = e.target.value; savePrefs(); loadMarketData(); });
+    document.getElementById('selTimeframe').addEventListener('change', e => { state.tf = e.target.value; savePrefs(); loadMarketData(); });
+    document.getElementById('selMarket').addEventListener('change', e => { state.market = e.target.value; savePrefs(); loadMarketData(); });
+    document.getElementById('chkAutoCombo').addEventListener('change', e => { state.autoCombo = e.target.checked; runEnginesForCurrentMode(); });
+    document.getElementById('btnRefresh').addEventListener('click', () => { loadMarketData(); showToast('در حال بروزرسانی...'); });
+    document.getElementById('btnRetryFeed').addEventListener('click', loadMarketData);
+    document.getElementById('btnCalcRisk').addEventListener('click', () => { calculateRisk(); showToast('محاسبه انجام شد'); });
+    document.getElementById('btnRunBt').addEventListener('click', runBacktest);
+
+    // Full Journal Entry (Auto-calculates consistent PnL & R, 0 R does NOT count as loss)
+    document.getElementById('btnAddJ').addEventListener('click', () => {
+      const sym = document.getElementById('inJSym').value.trim().toUpperCase() || state.symbol;
+      const dir = document.getElementById('inJDir').value;
+      const strat = document.getElementById('inJStrat').value.trim() || 'عمومی';
+      const entry = +document.getElementById('inJEntry').value;
+      const exit = +document.getElementById('inJExit').value;
+      const sl = +document.getElementById('inJSlPrice').value;
+      const qty = +document.getElementById('inJQty').value;
+      const fee = +document.getElementById('inJFee').value || 0;
+      const note = document.getElementById('inJNote').value.trim();
+
+      if (!entry || !exit || !sl || !qty || entry <= 0 || exit <= 0 || sl <= 0 || qty <= 0) {
+        showToast('لطفاً قیمت ورود، خروج، حد ضرر و حجم را کامل وارد کنید');
+        return;
+      }
+      const riskPerUnit = Math.abs(entry - sl);
+      if (riskPerUnit <= 0) { showToast('حد ضرر نمی‌تواند برابر نقطه ورود باشد'); return; }
+
+      const grossPnl = dir === 'LONG' ? (exit - entry) * qty : (entry - exit) * qty;
+      const netPnl = grossPnl - fee;
+      const riskUsd = riskPerUnit * qty;
+      const r = netPnl / Math.max(1e-8, riskUsd);
+
+      let adh = 100;
+      if (document.getElementById('chkJSl').checked) adh -= 45;
+      if (document.getElementById('chkJVol').checked) adh -= 35;
+      if (document.getElementById('chkJFomo').checked) adh -= 20;
+      if (document.getElementById('chkJFear').checked) adh -= 20;
+
+      state.journal.push({ ts: new Date().toISOString(), sym, dir, strat, entry, exit, sl, qty, fee, netPnl, r, adh: Math.max(0, adh), note });
+      if (netPnl < 0) { state.consecutiveLosses++; if (state.consecutiveLosses >= 3) state.locked = true; }
+      else if (netPnl > 0) { state.consecutiveLosses = 0; state.locked = false; }
+
+      saveJournalState(); renderJournal(); renderAnalysisUI(); showToast('پوزیشن در ژورنال ثبت شد');
+    });
+
+    document.getElementById('btnUnlockJ').addEventListener('click', () => {
+      state.locked = false; state.consecutiveLosses = 0; saveJournalState(); renderJournal(); renderAnalysisUI(); showToast('قفل ریست شد');
+    });
+
+    document.getElementById('btnExportCsv').addEventListener('click', () => {
+      if (!state.journal.length) { showToast('ژورنال خالی است'); return; }
+      const header = 'Time,Symbol,Direction,Strategy,Entry,Exit,StopLoss,Qty,Fee,NetPnL,R,Adherence,Note\n';
+      const rows = state.journal.map(t => [t.ts, t.sym, t.dir, t.strat, t.entry, t.exit, t.sl, t.qty, t.fee, t.netPnl.toFixed(2), t.r.toFixed(2), t.adh, '"' + String(t.note || '').replace(/"/g, '""') + '"'].join(',')).join('\n');
+      const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'TradingAssistant_Journal.csv';
+      a.click();
+    });
+
+    window.addEventListener('resize', () => {
+      if (chart) { const c = document.getElementById('tvChartContainer'); chart.resize(c.clientWidth, c.clientHeight); }
+    });
+
+    loadSavedState();
+    initChart();
+    renderJournal();
+    updateSubscriptionUI();
+    loadMarketData();
+  </script>
+</body>
+</html>
