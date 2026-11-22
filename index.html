@@ -1,0 +1,3157 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="description" content="PA-Assistant — Crypto market analysis, trading scenarios, risk management, alerts, news and journal" />
+  <title>PA-Assistant</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #f2f2f7;
+      --bg-mesh: radial-gradient(circle at 12% 8%, rgba(0, 122, 255, 0.14), transparent 38%),
+                 radial-gradient(circle at 88% 12%, rgba(52, 199, 89, 0.10), transparent 36%),
+                 radial-gradient(circle at 50% 90%, rgba(88, 86, 214, 0.09), transparent 45%);
+      --glass-bg: rgba(255, 255, 255, 0.76);
+      --glass-elevated: rgba(255, 255, 255, 0.88);
+      --glass-subtle: rgba(242, 242, 247, 0.90);
+      --glass-border: rgba(255, 255, 255, 0.85);
+      --glass-ring: rgba(15, 23, 42, 0.09);
+      --glass-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --ink-primary: #1d1d1f;
+      --ink-secondary: #48484a;
+      --ink-muted: #6e6e73;
+      --accent: #007aff;
+      --accent-soft: rgba(0, 122, 255, 0.14);
+      --green: #248a3d;
+      --red: #d70015;
+      --amber: #b25000;
+      --input-bg: rgba(255, 255, 255, 0.92);
+      --input-border: rgba(15, 23, 42, 0.12);
+      --chart-bg: #ffffff;
+      --seg-bg: rgba(118, 118, 128, 0.12);
+      --seg-active: #ffffff;
+    }
+
+    html[data-theme="dark"] {
+      --bg-base: #050608;
+      --bg-mesh: radial-gradient(circle at 15% 6%, rgba(10, 132, 255, 0.22), transparent 40%),
+                 radial-gradient(circle at 85% 14%, rgba(212, 175, 55, 0.11), transparent 36%),
+                 radial-gradient(circle at 50% 92%, rgba(94, 92, 230, 0.15), transparent 46%);
+      --glass-bg: rgba(24, 24, 28, 0.72);
+      --glass-elevated: rgba(34, 34, 40, 0.82);
+      --glass-subtle: rgba(16, 16, 20, 0.76);
+      --glass-border: rgba(255, 255, 255, 0.14);
+      --glass-ring: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      --ink-primary: #f5f5f7;
+      --ink-secondary: #d1d1d6;
+      --ink-muted: #8e8e93;
+      --accent: #0a84ff;
+      --accent-soft: rgba(10, 132, 255, 0.20);
+      --green: #30d158;
+      --red: #ff453a;
+      --amber: #ff9f0a;
+      --input-bg: rgba(44, 44, 48, 0.78);
+      --input-border: rgba(255, 255, 255, 0.14);
+      --chart-bg: #08090d;
+      --seg-bg: rgba(118, 118, 128, 0.24);
+      --seg-active: rgba(99, 99, 102, 0.52);
+    }
+
+    * { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      background-image: var(--bg-mesh);
+      background-attachment: fixed;
+      color: var(--ink-primary);
+      overflow-x: hidden;
+      transition: background-color 0.35s ease, color 0.35s ease;
+    }
+
+    .num { font-family: -apple-system, 'Inter', ui-monospace, monospace; direction: ltr; display: inline-block; font-variant-numeric: tabular-nums; }
+
+    .card, .apple-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(28px) saturate(185%);
+      -webkit-backdrop-filter: blur(28px) saturate(185%);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: 24px;
+    }
+
+    .apple-header {
+      background: var(--glass-elevated);
+      backdrop-filter: blur(32px) saturate(200%);
+      -webkit-backdrop-filter: blur(32px) saturate(200%);
+      border-bottom: 1px solid var(--glass-ring);
+      padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+      padding-bottom: 10px !important;
+      z-index: 35;
+    }
+
+
+    .apple-dock {
+      background: var(--glass-elevated);
+      backdrop-filter: blur(34px) saturate(210%);
+      -webkit-backdrop-filter: blur(34px) saturate(210%);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 18px 42px -12px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .apple-input {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--ink-primary);
+      border-radius: 14px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .apple-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .apple-seg {
+      background: var(--seg-bg);
+      border-radius: 16px;
+      padding: 4px;
+    }
+    .apple-seg-btn {
+      border-radius: 12px;
+      color: var(--ink-muted);
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .apple-seg-btn.active {
+      background: var(--seg-active);
+      color: var(--ink-primary);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
+    }
+
+    .apple-btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-radius: 16px;
+      font-weight: 700;
+      box-shadow: 0 8px 20px -8px rgba(10, 132, 255, 0.65);
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+    .apple-btn-primary:active { transform: scale(0.97); }
+
+    .apple-btn-soft {
+      background: var(--seg-bg);
+      color: var(--ink-primary);
+      border-radius: 14px;
+      border: 1px solid var(--glass-ring);
+      transition: transform 0.16s ease, background-color 0.2s ease;
+    }
+    .apple-btn-soft:active { transform: scale(0.97); }
+
+    .nav-item {
+      color: var(--ink-muted);
+      border-radius: 18px;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .nav-item.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    #toast, #dynamicIslandAlert, #dynamicIslandAlert * { color: #ffffff; }
+    #dynamicIslandAlert {
+      top: max(14px, calc(env(safe-area-inset-top, 0px) + 12px));
+      background: rgba(18, 18, 22, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 20px 44px -10px rgba(0, 0, 0, 0.55);
+      border-radius: 999px;
+      animation: islandPop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes islandPop {
+      from { opacity: 0; transform: translate(-50%, -16px) scale(0.93); }
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    .lux-card {
+      background: linear-gradient(165deg, #fffdf9 0%, #f7f4ec 100%);
+      border: 1px solid rgba(180, 134, 38, 0.38);
+      box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      border-radius: 28px;
+    }
+    html[data-theme="dark"] .lux-card {
+      background: linear-gradient(165deg, #17181f 0%, #0f1015 100%);
+      border: 1px solid rgba(212, 175, 55, 0.34);
+      box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 232, 163, 0.16);
+    }
+    .lux-gold-text {
+      background: linear-gradient(125deg, #8f6314 0%, #b8841e 50%, #7d540e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    html[data-theme="dark"] .lux-gold-text {
+      background: linear-gradient(125deg, #d4a644 0%, #f4da88 50%, #bd8d2c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lux-sig-wrap {
+      direction: ltr;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 8px 2px;
+    }
+    .lux-sig-text {
+      font-family: 'Great Vibes', 'Snell Roundhand', 'Brush Script MT', 'Apple Chancery', Georgia, serif;
+      font-size: 36px;
+      line-height: 1.15;
+      letter-spacing: 0.5px;
+      background: linear-gradient(125deg, #8f6314 0%, #c9972e 50%, #7d540e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      user-select: none;
+    }
+    html[data-theme="dark"] .lux-sig-text {
+      background: linear-gradient(125deg, #cfa13d 0%, #f6df96 50%, #ba8a27 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lux-poem {
+      border-right: 2.5px solid rgba(212, 175, 55, 0.75);
+      background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.09));
+    }
+    .lux-btn-gold {
+      background: linear-gradient(135deg, #c99b35 0%, #e7c670 50%, #b58524 100%);
+      color: #14120d;
+      font-weight: 800;
+      border-radius: 16px;
+      box-shadow: 0 10px 26px -8px rgba(212, 175, 55, 0.55);
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+    .lux-btn-gold:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
+    .lux-btn-gold:not(:disabled):active { transform: scale(0.985); }
+
+    .chart-fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: var(--bg-base);
+      padding: max(16px, calc(env(safe-area-inset-top, 0px) + 14px)) 12px max(12px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+      display: flex;
+      flex-direction: column;
+      border-radius: 0;
+    }
+    .chart-fullscreen #tvChartContainer {
+      flex: 1 1 auto;
+      height: auto;
+      min-height: 72vh;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-36">
+
+  <div id="banLockScreen" class="hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6 text-center">
+    <div class="max-w-sm w-full apple-glass p-6 space-y-4">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-500/20 flex items-center justify-center text-2xl">⛔</div>
+      <h2 class="text-base font-extrabold text-rose-400">دسترسی این دستگاه مسدود شد</h2>
+      <p id="banReasonText" class="text-xs text-slate-300 leading-relaxed">فعالیت غیرمجاز یا تلاش برای دستکاری سیستم شناسایی شد و شناسه این دستگاه به صورت دائمی مسدود گردید.</p>
+      <div id="banFpTag" class="text-[11px] text-slate-500 num">ID: --</div>
+    </div>
+  </div>
+
+  <div id="dynamicIslandAlert" class="hidden fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 flex items-center gap-3 max-w-[94vw]">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+    <div class="text-xs leading-snug">
+      <div id="islandTitle" class="font-bold text-white">آلارم فعال شد</div>
+      <div id="islandBody" class="text-[11px] text-slate-300">--</div>
+    </div>
+    <button id="btnCloseIsland" type="button" class="text-xs px-2.5 py-1 rounded-full bg-white/15 text-white shrink-0">بستن</button>
+  </div>
+
+  <!-- Auth & Email Verification Modal -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/65 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="w-full max-w-md apple-glass p-6 space-y-4 my-auto">
+      <div class="text-center space-y-1.5">
+        <div class="w-14 h-14 mx-auto rounded-[18px] bg-gradient-to-br from-[#0a84ff] via-[#30d158] to-[#e7c670] flex items-center justify-center text-white font-extrabold text-lg shadow-lg">PA</div>
+        <h2 id="authTitle" class="text-lg font-extrabold" dir="ltr">PA-Assistant</h2>
+        <p id="authSubtitle" class="text-xs text-[var(--ink-muted)]">پس از ثبت‌نام و تایید ایمیل، ترایال رایگان شما فعال می‌شود</p>
+      </div>
+
+      <div id="authTabSwitch" class="apple-seg grid grid-cols-2 gap-1 text-xs">
+        <button id="btnAuthTabReg" type="button" class="apple-seg-btn active py-2.5 font-bold">ثبت‌نام جدید</button>
+        <button id="btnAuthTabLogin" type="button" class="apple-seg-btn py-2.5 font-bold">ورود به حساب</button>
+      </div>
+
+      <div id="authTrialBanner" class="grid grid-cols-2 gap-2 text-center text-[11px]">
+        <div class="rounded-2xl p-2.5 border border-[var(--glass-ring)] bg-[var(--accent-soft)]">
+          <div class="font-extrabold text-[var(--accent)]">۷ روز رایگان</div>
+          <div class="text-[var(--ink-secondary)] mt-0.5">دستیار تحلیل‌گر (Plus)</div>
+        </div>
+        <div class="rounded-2xl p-2.5 border border-[var(--glass-ring)] bg-amber-500/15">
+          <div class="font-extrabold text-[var(--amber)]">۱ روز رایگان</div>
+          <div class="text-[var(--ink-secondary)] mt-0.5">دستیار تریدر (Pro)</div>
+        </div>
+      </div>
+
+      <div id="authFormBox" class="space-y-2.5 text-xs">
+        <div id="wrapRegUsername">
+          <label for="inRegName" class="text-[var(--ink-secondary)] block mb-1 font-semibold">نام کاربری (یا نام شما)</label>
+          <input id="inRegName" type="text" autocomplete="username" placeholder="مثلاً: erfan یا عرفان" class="w-full apple-input px-3.5 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label for="inAuthEmail" class="text-[var(--ink-secondary)] block mb-1 font-semibold">ایمیل</label>
+          <input id="inAuthEmail" type="email" dir="ltr" autocomplete="email" placeholder="you@example.com" class="w-full apple-input px-3.5 py-2.5 text-sm text-left" />
+        </div>
+        <div>
+          <label for="inAuthPass" class="text-[var(--ink-secondary)] block mb-1 font-semibold">رمز عبور</label>
+          <input id="inAuthPass" type="password" dir="ltr" autocomplete="current-password" placeholder="حداقل ۶ کاراکتر" class="w-full apple-input px-3.5 py-2.5 text-sm text-left" />
+        </div>
+        <div id="lblRegError" class="hidden text-xs text-rose-500 font-medium leading-relaxed"></div>
+        <button id="btnCompleteReg" type="button" class="w-full py-3 apple-btn-primary text-sm">ثبت‌نام و ارسال ایمیل تایید</button>
+        <div id="wrapForgotPass" class="hidden text-center pt-1">
+          <button id="btnForgotPass" type="button" class="text-xs text-[var(--accent)] font-semibold hover:underline">رمز عبورم را فراموش کرده‌ام</button>
+        </div>
+        <div class="pt-2 border-t border-[var(--glass-ring)] text-center">
+          <button id="btnContinueGuest" type="button" class="w-full py-2.5 apple-btn-soft text-xs font-semibold">ادامه به‌عنوان مهمان (اخبار، ژورنال، ریسک و آلارم قیمت رایگان)</button>
+        </div>
+      </div>
+
+      <div id="authVerifyBox" class="hidden space-y-3 text-center text-xs">
+        <div class="p-3.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--accent-soft)] space-y-1.5">
+          <div class="font-extrabold text-sm text-[var(--accent)]">لینک تایید ایمیل ارسال شد ✉️</div>
+          <p class="text-[var(--ink-secondary)] leading-relaxed">لطفاً صندوق ورودی (یا پوشه Spam) ایمیل <strong id="verifyEmailAddr" class="num">--</strong> را باز کرده و روی لینک تایید کلیک کنید، سپس دکمه زیر را بزنید.</p>
+        </div>
+        <div id="lblVerifyError" class="hidden text-xs text-rose-500 font-medium leading-relaxed"></div>
+        <button id="btnCheckVerified" type="button" class="w-full py-3 apple-btn-primary text-sm">ایمیل را تایید کردم، ورود به برنامه</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnResendVerify" type="button" class="py-2.5 apple-btn-soft font-semibold">ارسال مجدد ایمیل</button>
+          <button id="btnVerifyLogout" type="button" class="py-2.5 apple-btn-soft font-semibold text-rose-500">تغییر ایمیل / خروج</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post-Verification Onboarding Modal: Intro Speech -> Mandatory Scroll Terms -> 4-Slide Tutorial -->
+  <div id="onboardingModal" class="hidden fixed inset-0 z-[60] bg-black/75 backdrop-blur-2xl flex items-center justify-center p-3.5 overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="w-full max-w-xl lux-card p-5 sm:p-7 my-auto max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-[var(--glass-ring)] text-[11px]">
+        <div class="flex items-center gap-1.5 font-bold flex-wrap">
+          <span id="obStepPill1" class="px-2.5 py-1 rounded-full bg-amber-500/20 text-[var(--amber)]">۱. سخن آغازین</span>
+          <span id="obStepPill2" class="px-2.5 py-1 rounded-full bg-[var(--glass-subtle)] text-[var(--ink-muted)]">۲. قوانین</span>
+          <span id="obStepPill3" class="px-2.5 py-1 rounded-full bg-[var(--glass-subtle)] text-[var(--ink-muted)]">۳. آموزش</span>
+        </div>
+        <span class="text-[10px] text-[var(--ink-muted)] tracking-widest uppercase" dir="ltr">PA-Assistant</span>
+      </div>
+
+      <!-- Screen 1: Luxury Minimalist Intro Speech -->
+      <div id="obStep1" class="overflow-y-auto space-y-4 pr-1 text-xs leading-7">
+        <div class="text-center space-y-1">
+          <div class="text-[10px] tracking-[0.24em] text-[var(--amber)] uppercase font-bold" dir="ltr">PA-Assistant • Atelier Edition</div>
+          <h2 class="text-xl sm:text-2xl font-extrabold lux-gold-text">پیش از شروع…</h2>
+        </div>
+
+        <div class="lux-poem rounded-2xl px-4 py-3 text-center space-y-1">
+          <div class="text-sm font-bold tracking-tight">کوه نتواند شدن سدِ ره مقصودِ مرد</div>
+          <div class="text-sm font-bold tracking-tight">همتِ مردان برآرد از نهادِ کوه، گرد</div>
+        </div>
+
+        <p class="text-[var(--ink-secondary)]">من از سال‌هایی که به بازارهای مالی علاقه‌مند شدم و فعالیت در دنیای معامله‌گری را آغاز کردم، همواره با یک خلأ روبه‌رو بودم؛ نبود ابزاری که بتواند بخش مهمی از فرایند بررسی بازار و تحلیل را با سرعت و نظم بیشتری در اختیار معامله‌گر قرار دهد.</p>
+        <p class="text-[var(--ink-secondary)]">ایده ساخت این نرم‌افزار از همین نیاز شکل گرفت. محصولی که پیش روی شماست، حاصل ماه‌ها و سال‌ها تلاش، تحقیق، آموزش، تجربه معاملاتی و همکاری تیمی برای تبدیل این ایده به یک ابزار کاربردی است.</p>
+
+        <div class="space-y-2">
+          <div class="text-xs font-extrabold lux-gold-text">این نرم‌افزار چه کاری انجام می‌دهد؟</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-relaxed">
+            <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1">
+              <div class="font-extrabold text-[var(--accent)]">۱. حالت تحلیل‌گر</div>
+              <div class="text-[var(--ink-secondary)]">بررسی بازار، تحلیل روند و ارائه دید تحلیلی در تایم‌فریم‌های مشخص با هدف کمک به درک بهتر شرایط بازار.</div>
+            </div>
+            <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1">
+              <div class="font-extrabold text-[var(--amber)]">۲. حالت معامله‌گر</div>
+              <div class="text-[var(--ink-secondary)]">بررسی شرایط بازار و ارائه محدوده‌های تقریبی ورود، حد ضرر (Stop Loss) و اهداف سود (Take Profit) برای کمک به بررسی سناریوهای معاملاتی.</div>
+            </div>
+            <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1">
+              <div class="font-extrabold text-[var(--green)]">۳. مدیریت سرمایه</div>
+              <div class="text-[var(--ink-secondary)]">طراحی‌شده با الهام از اصول مارک داگلاس برای کمک به کنترل ریسک و انضباط معاملاتی؛ خروجی آن صرفاً جنبه پیشنهادی دارد.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 text-[11px] leading-relaxed text-[var(--ink-secondary)]">
+          <strong class="text-[var(--amber)]">یک نکته مهم:</strong> هر دو حالت تحلیل‌گر و معامله‌گر با هدف صرفه‌جویی در زمان و کمک به فرایند تحلیل طراحی شده‌اند؛ خروجی آن‌ها توصیه قطعی خرید و فروش نیست و استفاده صحیح از آن‌ها مستلزم دانش و آموزش کافی در بازارهای مالی است.
+        </div>
+
+        <div class="space-y-2 pt-1">
+          <div class="text-xs font-extrabold lux-gold-text">سخن پایانی</div>
+          <p class="text-[var(--ink-secondary)]">این محصول برای من صرفاً یک نرم‌افزار نیست؛ نتیجه سال‌ها علاقه، آموزش، تجربه معامله‌گری و تلاش برای ساخت ابزاری است که خودم در مسیر فعالیت در بازارهای مالی به وجود آن نیاز داشتم.</p>
+          <p class="text-[var(--ink-secondary)]">امیدوارم این ابزار برای شما کاربردی باشد، از امکانات آن به بهترین شکل استفاده کنید و در مسیر معامله‌گری، تصمیم‌هایی آگاهانه‌تر و منظم‌تر بگیرید.</p>
+        </div>
+
+        <div class="flex flex-col items-end pt-3 border-t border-[var(--glass-ring)]">
+          <div class="lux-sig-wrap" aria-label="امضای عرفان .ک">
+            <span class="lux-sig-text">Erfan .K</span>
+            <svg viewBox="0 0 180 14" class="w-36 h-3 -mt-1 select-none pointer-events-none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="sigGoldGrad" x1="0" y1="0" x2="180" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#b8841e" stop-opacity="0.25"/>
+                  <stop offset="50%" stop-color="#d4a644" stop-opacity="0.95"/>
+                  <stop offset="100%" stop-color="#b8841e" stop-opacity="0.2"/>
+                </linearGradient>
+              </defs>
+              <path d="M8 9 C 52 3, 128 3, 172 8" stroke="url(#sigGoldGrad)" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M42 12 C 78 10, 118 10, 146 12" stroke="url(#sigGoldGrad)" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="text-xs font-extrabold lux-gold-text mt-1">با احترام، عرفان .ک</div>
+        </div>
+
+        <button id="btnObToTerms" type="button" class="w-full py-3.5 lux-btn-gold text-sm mt-2">مطالعه قوانین و شرایط استفاده ←</button>
+      </div>
+
+      <!-- Screen 2: Strict Legal Terms with Mandatory 100% Scroll & Reading Lock -->
+      <div id="obStep2" class="hidden flex-1 flex flex-col min-h-0 space-y-3 text-xs">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-extrabold">قوانین و شرایط استفاده از نرم‌افزار</h2>
+            <p class="text-[11px] text-[var(--ink-muted)] mt-0.5">برای فعال شدن گزینه‌های تایید، متن زیر را تا ۱۰۰٪ انتها مطالعه کنید.</p>
+          </div>
+          <span id="termsProgressBadge" class="px-2.5 py-1 rounded-full bg-amber-500/15 text-[var(--amber)] font-bold text-[11px] num shrink-0">۰٪</span>
+        </div>
+        <div class="w-full h-1.5 rounded-full bg-[var(--glass-subtle)] overflow-hidden">
+          <div id="termsProgressBar" class="h-full bg-gradient-to-l from-amber-400 to-emerald-400 transition-all duration-150" style="width:0%"></div>
+        </div>
+
+        <div id="termsScrollBox" class="flex-1 max-h-[38vh] overflow-y-auto rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] p-4 space-y-3.5 leading-7 text-[var(--ink-secondary)]">
+          <p>اکنون که با هدف شکل‌گیری، قابلیت‌ها و نحوه عملکرد این نرم‌افزار آشنا شدید، لازم است پیش از استفاده، شرایط و تعهدات مربوط به آن را مطالعه کنید. استفاده از نرم‌افزار به معنای پذیرش ضوابط زیر است. هدف از تدوین این قوانین، حفظ حقوق کاربران، صیانت از مالکیت فکری محصول، جلوگیری از سوءاستفاده و ایجاد چارچوبی شفاف برای استفاده صحیح از امکانات نرم‌افزار است.</p>
+
+          <div><strong class="text-[var(--ink-primary)]">۱. مالکیت فکری و حقوق نرم‌افزار</strong><br/>تمامی حقوق مادی و معنوی نرم‌افزار، از جمله کدهای برنامه‌نویسی، الگوریتم‌ها، ساختارهای تحلیلی، مدل‌های پردازش اطلاعات، رابط کاربری، طراحی و سایر اجزای اختصاصی آن متعلق به مالک و توسعه‌دهنده نرم‌افزار است. هرگونه کپی‌برداری، تکثیر، مهندسی معکوس، استخراج الگوریتم‌ها، تغییر، بازتولید، فروش یا بهره‌برداری تجاری از تمام یا بخشی از نرم‌افزار بدون دریافت مجوز کتبی ممنوع است.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۲. محرمانگی و ممنوعیت انتشار</strong><br/>کاربر متعهد می‌شود از انتشار، انتقال یا در اختیار قراردادن نسخه نرم‌افزار، فایل‌های نصب، اطلاعات دسترسی، کلیدهای فعال‌سازی، امکانات اختصاصی و محتوای غیرعمومی آن برای اشخاص فاقد مجوز خودداری کند. هرگونه اشتراک‌گذاری، فروش، اجاره یا واگذاری دسترسی به نرم‌افزار خارج از شرایط مجوز صادرشده ممنوع است.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۳. سیاست استفاده منصفانه و مقابله با تقلب</strong><br/>هر حساب کاربری صرفاً مجاز به استفاده در محدوده مجوز صادرشده است. موارد زیر تخلف محسوب می‌شوند:<br/>• دور زدن سیستم لایسنس، محدودیت تعداد دستگاه‌ها یا سازوکارهای امنیتی.<br/>• ایجاد حساب‌های متعدد یا استفاده از روش‌های مختلف برای تمدید غیرمجاز دوره آزمایشی (Trial).<br/>• جعل هویت، دستکاری اطلاعات حساب یا استفاده غیرمجاز از حساب دیگران.<br/>• انتقال، فروش، اجاره یا اشتراک‌گذاری حساب کاربری.<br/>• تلاش برای نفوذ یا دسترسی غیرمجاز به سرورها و زیرساخت‌های نرم‌افزار.<br/>در صورت احراز تخلف، مالک مجاز است دسترسی کاربر را تعلیق یا حساب وی را به‌صورت دائمی مسدود کند. در مواردی که تخلف واجد وصف قانونی باشد، مالک حق پیگیری موضوع از طریق مراجع قضایی و قانونی ذی‌صلاح و مطالبه خسارات وارده را برای خود محفوظ می‌دارد.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۴. سیاست حفظ حریم خصوصی</strong><br/>اطلاعات کاربران صرفاً در راستای ارائه خدمات، مدیریت حساب کاربری، احراز هویت، اعتبارسنجی لایسنس، کنترل دستگاه‌های مجاز، پشتیبانی فنی و ارتقای امنیت نرم‌افزار پردازش می‌شوند. این اطلاعات می‌توانند شامل مشخصات حساب، شناسه‌های فنی دستگاه، سوابق ورود، فعال‌سازی و گزارش رویدادهای امنیتی باشند. اطلاعات کاربران بدون مجوز یا مبنای قانونی در اختیار اشخاص ثالث قرار نمی‌گیرد؛ مگر در مواردی که ارائه آن به موجب قانون یا دستور مراجع صلاحیت‌دار الزامی باشد یا برای ارائه خدمات فنی ضروری باشد. مالک متعهد به اتخاذ اقدامات امنیتی متعارف و متناسب برای حفاظت از اطلاعات کاربران است.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۵. سلب مسئولیت و محدودیت تضمین</strong><br/>این نرم‌افزار صرفاً یک دستیار تحلیلی و ابزار کمکی برای معامله‌گران بازارهای مالی است و جایگزین دانش، تجربه، آموزش، تحلیل مستقل یا تصمیم‌گیری شخصی معامله‌گر نیست. خروجی‌های نرم‌افزار، شامل تحلیل‌ها، هشدارها، محدوده‌های ورود، حد ضرر و اهداف سود، صرفاً جنبه تحلیلی و اطلاع‌رسانی دارند و به هیچ عنوان توصیه قطعی خرید یا فروش محسوب نمی‌شوند. هیچ‌گونه تضمینی در خصوص کسب سود، نرخ برد مشخص، جلوگیری از زیان، صحت صددرصدی تحلیل‌ها یا عملکرد یکسان نرم‌افزار در تمامی شرایط بازار ارائه نمی‌شود. مسئولیت بررسی خروجی‌ها، انتخاب استراتژی، تعیین حجم معاملات، مدیریت سرمایه و اتخاذ تصمیم نهایی بر عهده کاربر است. تمامی سود و زیان‌های ناشی از معاملات، از جمله معاملاتی که با استفاده از اطلاعات و خروجی‌های نرم‌افزار انجام می‌شوند، بر عهده شخص معامله‌گر است. مالک نرم‌افزار در حدودی که قانون اجازه می‌دهد، مسئولیتی در قبال نتایج معاملاتی کاربران نخواهد داشت.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۶. تغییر و به‌روزرسانی قوانین</strong><br/>مالک نرم‌افزار حق دارد در صورت نیاز و با رعایت قوانین لازم‌الاجرا، مفاد این توافق‌نامه را به‌روزرسانی کند. در صورت اعمال تغییرات اساسی، نسخه جدید برای مطالعه و تأیید مجدد در اختیار کاربران قرار خواهد گرفت. همچنین با توجه به ماهیت دیجیتال لایسنس‌ها، پس از فعال‌سازی اشتراک امکان لغو یا عودت وجه وجود نخواهد داشت.</div>
+
+          <div><strong class="text-[var(--ink-primary)]">۷. پذیرش نهایی و ثبت قانونی</strong><br/>کاربر با تأیید گزینه‌های زیر اعلام می‌کند که مفاد این توافق‌نامه (نسخه ۱.۰) را مطالعه کرده، از حقوق و تعهدات خود آگاه است و با شرایط استفاده از نرم‌افزار موافقت دارد. پذیرش این توافق‌نامه شرط استفاده از امکانات نرم‌افزار است.</div>
+        </div>
+
+        <div id="termsLockHint" class="text-[11px] text-[var(--amber)] font-semibold text-center">🔒 لطفاً متن قوانین را تا ۱۰۰٪ انتها اسکرول و مطالعه کنید تا گزینه‌های تأیید باز شوند.</div>
+
+        <div class="space-y-2 text-[11px]">
+          <label class="flex items-start gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkTerm1" type="checkbox" disabled class="mt-0.5 accent-[#0a84ff] w-4 h-4 shrink-0" />
+            <span><strong>پذیرش قوانین و حریم خصوصی:</strong> تأیید می‌کنم که قوانین استفاده، شرایط خدمات و سیاست حفظ حریم خصوصی نرم‌افزار را مطالعه کرده‌ام و تمامی مفاد آن را می‌پذیرم.</span>
+          </label>
+          <label class="flex items-start gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkTerm2" type="checkbox" disabled class="mt-0.5 accent-[#0a84ff] w-4 h-4 shrink-0" />
+            <span><strong>تعهد به رعایت حقوق مالکیت و عدم سوءاستفاده:</strong> متعهد می‌شوم از هرگونه کپی‌برداری، انتشار یا اشتراک‌گذاری غیرمجاز، دستکاری نرم‌افزار، دور زدن سیستم لایسنس و سوءاستفاده از دوره آزمایشی (Trial) خودداری کنم.</span>
+          </label>
+          <label class="flex items-start gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkTerm3" type="checkbox" disabled class="mt-0.5 accent-[#0a84ff] w-4 h-4 shrink-0" />
+            <span><strong>پذیرش سلب مسئولیت معاملاتی:</strong> آگاه هستم که این نرم‌افزار صرفاً ابزاری کمکی برای تحلیل بازار است و توصیه قطعی خرید و فروش محسوب نمی‌شود. مسئولیت تصمیمات معاملاتی، مدیریت سرمایه و نتایج حاصل از معاملات بر عهده خودم است.</span>
+          </label>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="btnObBack1" type="button" class="px-4 py-3 apple-btn-soft font-bold">بازگشت</button>
+          <button id="btnAcceptTerms" type="button" disabled class="flex-1 py-3 lux-btn-gold text-sm">پذیرش قوانین و شروع آموزش ←</button>
+        </div>
+      </div>
+
+      <!-- Screen 3: 4-Slide App Tutorial -->
+      <div id="obStep3" class="hidden space-y-4 text-xs">
+        <div id="obTutCard" class="p-5 rounded-3xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-3 min-h-[210px] flex flex-col justify-center text-center">
+          <div id="obTutIcon" class="text-4xl">📊</div>
+          <h3 id="obTutTitle" class="text-base font-extrabold">--</h3>
+          <p id="obTutBody" class="text-xs text-[var(--ink-secondary)] leading-7">--</p>
+        </div>
+        <div id="obTutDots" class="flex items-center justify-center gap-1.5"></div>
+        <div class="flex gap-2">
+          <button id="btnTutPrev" type="button" class="px-4 py-3 apple-btn-soft font-bold">قبلی</button>
+          <button id="btnTutNext" type="button" class="flex-1 py-3 lux-btn-gold text-sm">بعدی ←</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Header with iOS Safe Area -->
+  <header class="sticky top-0 apple-header px-3.5">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-[13px] bg-gradient-to-br from-[#0a84ff] via-[#30d158] to-[#e7c670] flex items-center justify-center text-white font-extrabold text-xs shrink-0 shadow-md">PA</div>
+        <div>
+          <h1 class="text-sm font-extrabold leading-tight tracking-tight" dir="ltr">PA-Assistant</h1>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span id="feedDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="feedStatus" class="text-[11px] text-[var(--ink-muted)]">در حال اتصال...</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="apple-seg flex items-center gap-0.5 text-[11px]" role="group" aria-label="انتخاب تم">
+          <button data-theme-pref="auto" type="button" class="theme-btn apple-seg-btn px-2 py-1 font-semibold">خودکار</button>
+          <button data-theme-pref="light" type="button" class="theme-btn apple-seg-btn px-2 py-1 font-semibold" aria-label="تم روشن">☀</button>
+          <button data-theme-pref="dark" type="button" class="theme-btn apple-seg-btn px-2 py-1 font-semibold" aria-label="تم تیره">☾</button>
+        </div>
+        <button id="btnHeaderAlerts" type="button" aria-label="آلارم‌ها" class="relative apple-btn-soft w-8 h-8 flex items-center justify-center text-sm">
+          🔔
+          <span id="alertBadgeDot" class="hidden absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center num">0</span>
+        </button>
+        <button id="btnHeaderPlan" type="button" class="hidden sm:inline-flex text-xs px-2.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[var(--amber)] font-bold">مهمان</button>
+        <button id="btnRefresh" type="button" aria-label="بروزرسانی دیتا" class="apple-btn-soft w-8 h-8 flex items-center justify-center text-sm">↻</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-3.5 pt-3.5 space-y-3.5">
+    <div id="toast" role="status" aria-live="polite" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-[#1c1c1e]/95 text-white text-xs font-semibold shadow-2xl border border-white/15 backdrop-blur-xl"></div>
+
+    <div id="staleBanner" class="hidden rounded-3xl p-3.5 bg-rose-500/15 border border-rose-500/40 text-rose-500 text-xs flex items-center justify-between gap-2 backdrop-blur-xl">
+      <span>⚠️ ارتباط با سرور صرافی قطع است. برای حفظ امنیت سرمایه، صدور سیگنال و تحلیل متوقف شده است.</span>
+      <button id="btnRetryFeed" type="button" class="px-3.5 py-1.5 rounded-full bg-rose-600 text-white font-bold shrink-0">تلاش مجدد</button>
+    </div>
+
+    <div id="guestWarningBanner" class="hidden rounded-3xl p-3 border border-amber-500/35 bg-amber-500/10 flex items-center justify-between gap-2 text-xs">
+      <div class="leading-relaxed">
+        <span class="font-extrabold text-amber-400">حالت مهمان (بدون حساب کاربری):</span>
+        <span class="text-[var(--ink-secondary)]">اخبار، ژورنال، مدیریت ریسک و آلارم قیمت/خبر رایگان است. برای استفاده از تحلیل‌گر و سیگنال وارد شوید.</span>
+      </div>
+      <button id="btnGuestLogin" type="button" class="px-3 py-1.5 rounded-full bg-[var(--accent)] text-white font-bold text-[11px] shrink-0">ورود / ثبت‌نام</button>
+    </div>
+
+    <section id="topControlBar" class="card p-3 space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        <select id="selSymbol" aria-label="انتخاب نماد" class="w-full apple-input text-xs px-2.5 py-2.5 font-semibold num">
+          <option value="BTCUSDT">BTCUSDT</option>
+          <option value="ETHUSDT">ETHUSDT</option>
+          <option value="SOLUSDT">SOLUSDT</option>
+          <option value="BNBUSDT">BNBUSDT</option>
+        </select>
+        <select id="selTimeframe" aria-label="انتخاب تایم‌فریم" class="w-full apple-input text-xs px-2.5 py-2.5 font-semibold num">
+          <option value="5m">5m (اسکالپ)</option>
+          <option value="15m" selected>15m (کوتاه‌مدت)</option>
+          <option value="1h">1h (سویینگ)</option>
+          <option value="4h">4h (بلندمدت)</option>
+        </select>
+        <select id="selMarket" aria-label="انتخاب بازار" class="w-full apple-input text-xs px-2.5 py-2.5 font-semibold">
+          <option value="FUTURES">Futures</option>
+          <option value="SPOT">Spot</option>
+        </select>
+      </div>
+
+      <div class="apple-seg grid grid-cols-2 gap-1">
+        <button id="btnModeAnalyst" type="button" class="apple-seg-btn active py-2 text-xs font-bold">دستیار تحلیل‌گر</button>
+        <button id="btnModeTrader" type="button" class="apple-seg-btn py-2 text-xs font-bold">دستیار تریدر (سیگنال)</button>
+      </div>
+    </section>
+
+    <section id="paywallGate" class="hidden card p-6 text-center space-y-3.5 border-amber-500/35">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-500/15 flex items-center justify-center text-2xl">🔒</div>
+      <h2 id="paywallTitle" class="text-base font-extrabold">اشتراک این بخش به پایان رسیده است</h2>
+      <p class="text-xs text-[var(--ink-muted)] leading-relaxed max-w-sm mx-auto">برای ادامه استفاده، می‌توانید دمو را یک‌بار رایگان تمدید کنید یا اشتراک Plus / Pro تهیه نمایید.</p>
+      <div class="flex flex-wrap justify-center gap-2 pt-1">
+        <button id="btnPaywallExtend" type="button" class="px-4 py-2.5 apple-btn-soft text-xs font-bold">تمدید رایگان دمو (۱ بار)</button>
+        <button id="btnGoPlans" type="button" class="px-5 py-2.5 apple-btn-primary text-xs">مشاهده پلن‌های اشتراک</button>
+      </div>
+    </section>
+
+    <!-- Chart & Analysis Tab -->
+    <section id="tabAnalysis" class="tab-panel space-y-3.5">
+      <div class="card p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold">روش‌های تحلیل فعال:</span>
+          <label class="flex items-center gap-2 text-xs font-semibold text-[var(--accent)] cursor-pointer select-none">
+            <input id="chkAutoCombo" type="checkbox" checked class="rounded accent-[#0a84ff] w-4 h-4" />
+            <span>ترکیب خودکار هوشمند</span>
+          </label>
+        </div>
+        <div id="styleChips" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <div id="chartCardWrapper" class="card p-3 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="lblPairTf" class="text-xs font-extrabold num">BTCUSDT • 15m</span>
+            <span id="lblMarketBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 text-[var(--amber)] font-bold">FUTURES</span>
+            <span id="lblLivePrice" class="text-xs font-extrabold text-[var(--green)] num">--</span>
+            <span id="lblChangePct" class="text-xs num text-[var(--ink-muted)]">--</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button id="btnZoomIn" type="button" aria-label="بزرگ‌نمایی" class="apple-btn-soft w-7 h-7 text-sm font-bold flex items-center justify-center">+</button>
+            <button id="btnZoomOut" type="button" aria-label="کوچک‌نمایی" class="apple-btn-soft w-7 h-7 text-sm font-bold flex items-center justify-center">−</button>
+            <button id="btnZoomReset" type="button" class="apple-btn-soft px-2.5 h-7 text-xs font-semibold">ریست</button>
+            <button id="btnFullscreen" type="button" class="px-2.5 h-7 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-bold">⛶ تمام‌صفحه</button>
+          </div>
+        </div>
+        <div id="tvChartContainer" class="relative h-80 w-full rounded-[18px] overflow-hidden border border-[var(--glass-ring)]" style="background: var(--chart-bg);"></div>
+        <div class="flex items-center justify-between text-[11px] text-[var(--ink-muted)] px-1">
+          <span id="lblLastSync">آخرین دریافت: --</span>
+          <span>حجم واقعی تیکر (Taker Delta) فعال است</span>
+        </div>
+      </div>
+
+      <div id="dynamicKpiGrid" class="grid grid-cols-2 gap-2.5"></div>
+      <div id="outputCard" class="card p-4 space-y-3"></div>
+    </section>
+
+    <!-- News & Fundamentals Tab (Free for all users including guests) -->
+    <section id="tabNews" class="tab-panel hidden space-y-3.5">
+      <div class="card p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-extrabold">فاندامنتال زنده بازار</h2>
+            <p class="text-[11px] text-[var(--ink-muted)] mt-0.5">فاندینگ ریت، بهره باز، نسبت لانگ/شورت و شاخص ترس و طمع</p>
+          </div>
+          <button id="btnRefreshIntel" type="button" class="apple-btn-soft px-3 py-1.5 text-xs font-bold shrink-0">↻ بروزرسانی</button>
+        </div>
+        <div id="newsFundamentalCards" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">Funding Rate</div><div class="text-sm font-extrabold num mt-1">--</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">Open Interest</div><div class="text-sm font-extrabold num mt-1">--</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">نسبت لانگ / شورت</div><div class="text-sm font-extrabold num mt-1">--</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">ترس و طمع</div><div class="text-sm font-extrabold num mt-1">--</div></div>
+        </div>
+        <div id="newsFundamentalSummary" class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] text-xs leading-relaxed text-[var(--ink-secondary)]">در حال دریافت داده‌های فاندامنتال...</div>
+      </div>
+
+      <div class="card p-4 space-y-3">
+        <div>
+          <h3 class="text-sm font-extrabold">تقویم رویدادهای مهم اقتصادی (پیشِ‌رو)</h3>
+          <p class="text-[11px] text-[var(--ink-muted)] mt-0.5">سناریوی اثر احتمالی روی کریپتو بر اساس انحراف از پیش‌بینی بازار</p>
+        </div>
+        <div id="newsMacroList" class="space-y-2.5 text-xs">
+          <div class="text-[var(--ink-muted)] text-center py-3">در حال دریافت تقویم اقتصادی...</div>
+        </div>
+      </div>
+
+      <div class="card p-4 space-y-3">
+        <div>
+          <h3 class="text-sm font-extrabold">اخبار به‌روز کریپتو و تحلیل اثر</h3>
+          <p class="text-[11px] text-[var(--ink-muted)] mt-0.5">خلاصه جهت احتمالی و درجه اهمیت هر خبر</p>
+        </div>
+        <div id="newsFeedList" class="space-y-2.5 text-xs">
+          <div class="text-[var(--ink-muted)] text-center py-3">در حال دریافت آخرین اخبار...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Alerts Tab -->
+    <section id="tabAlerts" class="tab-panel hidden space-y-3.5">
+      <div class="card p-4 space-y-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-extrabold">تنظیمات شخصی‌سازی آلارم‌ها</h2>
+            <p class="text-[11px] text-[var(--ink-muted)] mt-0.5">صدای اختصاصی، لرزش، اعلان سیستم و ساعات سکوت</p>
+          </div>
+          <button id="btnReqNotifPerm" type="button" class="px-3 py-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-bold shrink-0">فعال‌سازی اعلان گوشی</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <div>
+            <label for="selAlertSound" class="text-[var(--ink-muted)] block mb-1 font-semibold">صدای زنگ آلارم</label>
+            <div class="flex gap-1.5">
+              <select id="selAlertSound" class="flex-1 apple-input px-2.5 py-2 font-semibold">
+                <option value="chime">Apple Chime (کریستالی)</option>
+                <option value="sonar">Sonar Pulse (سونار)</option>
+                <option value="sniper">Sniper Ping (تک‌ضربه تیز)</option>
+                <option value="siren">Urgent Alert (هشدار فوری)</option>
+                <option value="mute">بی‌صدا (فقط بصری)</option>
+              </select>
+              <button id="btnTestSound" type="button" class="apple-btn-soft px-3 py-2 font-bold shrink-0">🔊 تست</button>
+            </div>
+          </div>
+          <div>
+            <label class="text-[var(--ink-muted)] block mb-1 font-semibold">ساعات سکوت (Do Not Disturb)</label>
+            <div class="flex items-center gap-1.5">
+              <label class="flex items-center gap-1.5 apple-input px-2.5 py-2 cursor-pointer">
+                <input id="chkQuietHours" type="checkbox" class="accent-[#0a84ff]" />
+                <span>فعال</span>
+              </label>
+              <input id="inQuietStart" type="number" min="0" max="23" value="23" aria-label="شروع سکوت" class="w-16 apple-input px-2 py-2 text-center num" />
+              <span class="text-[var(--ink-muted)]">تا</span>
+              <input id="inQuietEnd" type="number" min="0" max="23" value="7" aria-label="پایان سکوت" class="w-16 apple-input px-2 py-2 text-center num" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlSignal" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">سیگنال (ترکیب انتخابی) <span id="badgeAlSignalTier" class="text-[10px] text-amber-400 font-bold">Pro</span></span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlTrend" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">تغییر روند تحلیل‌گر <span id="badgeAlTrendTier" class="text-[10px] text-[var(--accent)] font-bold">Plus</span></span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlLevels" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">برخورد به حمایت/مقاومت <span id="badgeAlLevelsTier" class="text-[10px] text-[var(--accent)] font-bold">Plus</span></span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlRegime" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">تغییر رژیم بازار</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlRvol" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">اسپایک حجم (RVOL)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer">
+            <input id="chkAlNews" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">هشدار خبر مهم (۳۰ دقیقه قبل)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] cursor-pointer col-span-2 sm:col-span-3">
+            <input id="chkAlVibrate" type="checkbox" checked class="accent-[#0a84ff] w-4 h-4" />
+            <span class="font-semibold">لرزش (ویبره) هنگام هشدار</span>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs pt-1 border-t border-[var(--glass-ring)]">
+          <div>
+            <label for="selLevelDist" class="text-[var(--ink-muted)] block mb-1 font-semibold">فاصله هشدار حمایت/مقاومت</label>
+            <select id="selLevelDist" class="w-full apple-input px-2.5 py-2 font-semibold num">
+              <option value="0.2">۰.۲٪ (خیلی نزدیک)</option>
+              <option value="0.35" selected>۰.۳۵٪ (استاندارد)</option>
+              <option value="0.5">۰.۵٪ (زودهنگام)</option>
+              <option value="1.0">۱.۰٪ (محدوده گسترده)</option>
+            </select>
+          </div>
+          <div>
+            <label for="selAlertCooldown" class="text-[var(--ink-muted)] block mb-1 font-semibold">فاصله تکرار (Cooldown)</label>
+            <select id="selAlertCooldown" class="w-full apple-input px-2.5 py-2 font-semibold num">
+              <option value="1">۱ دقیقه</option>
+              <option value="5" selected>۵ دقیقه</option>
+              <option value="15">۱۵ دقیقه</option>
+              <option value="30">۳۰ دقیقه</option>
+            </select>
+          </div>
+          <div>
+            <label for="selSignalSound" class="text-[var(--ink-muted)] block mb-1 font-semibold">صدای اختصاصی سیگنال/سطوح</label>
+            <select id="selSignalSound" class="w-full apple-input px-2.5 py-2 font-semibold">
+              <option value="default" selected>همان صدای اصلی</option>
+              <option value="sniper">Sniper Ping (تک‌ضربه تیز)</option>
+              <option value="chime">Apple Chime (کریستالی)</option>
+              <option value="sonar">Sonar Pulse (سونار)</option>
+              <option value="siren">Urgent Alert (هشدار فوری)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-4 space-y-3">
+        <h3 class="text-sm font-extrabold">ساخت آلارم قیمتی شخصی</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div>
+            <label for="inAlSym" class="text-[var(--ink-muted)] block mb-1">نماد</label>
+            <select id="inAlSym" class="w-full apple-input px-2.5 py-2 num font-semibold">
+              <option value="BTCUSDT">BTCUSDT</option>
+              <option value="ETHUSDT">ETHUSDT</option>
+              <option value="SOLUSDT">SOLUSDT</option>
+              <option value="BNBUSDT">BNBUSDT</option>
+            </select>
+          </div>
+          <div>
+            <label for="inAlCond" class="text-[var(--ink-muted)] block mb-1">شرط عبور</label>
+            <select id="inAlCond" class="w-full apple-input px-2.5 py-2 font-semibold">
+              <option value="ABOVE">عبور به بالا (≥)</option>
+              <option value="BELOW">عبور به پایین (≤)</option>
+            </select>
+          </div>
+          <div>
+            <label for="inAlPrice" class="text-[var(--ink-muted)] block mb-1">قیمت هدف</label>
+            <input id="inAlPrice" type="number" step="0.01" placeholder="مثلاً 92500" class="w-full apple-input px-2.5 py-2 num" />
+          </div>
+          <div>
+            <label for="inAlRepeat" class="text-[var(--ink-muted)] block mb-1">حالت تکرار</label>
+            <select id="inAlRepeat" class="w-full apple-input px-2.5 py-2 font-semibold">
+              <option value="ONCE">یک‌بار</option>
+              <option value="REPEAT">تکرارشونده</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-2 text-xs">
+          <input id="inAlNote" type="text" placeholder="یادداشت آلارم (مثلاً: ورود روی حمایت ۴ ساعته...)" class="flex-1 apple-input px-3 py-2.5" />
+          <button id="btnAddPriceAlert" type="button" class="px-5 py-2.5 apple-btn-primary shrink-0">+ افزودن آلارم</button>
+        </div>
+        <div id="customAlertsList" class="space-y-2 pt-1 text-xs"></div>
+      </div>
+
+      <div class="card p-4 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-extrabold">تاریخچه آلارم‌های اجراشده</h3>
+          <button id="btnClearAlertLog" type="button" class="apple-btn-soft px-3 py-1 text-xs font-semibold">پاک‌سازی تاریخچه</button>
+        </div>
+        <div id="alertHistoryList" class="space-y-2 text-xs"></div>
+      </div>
+    </section>
+
+    <!-- Risk Management Tab (Free for all users including guests) -->
+    <section id="tabRisk" class="tab-panel hidden space-y-3.5">
+      <div class="card p-4 space-y-3.5">
+        <h2 class="text-sm font-extrabold">مدیریت سرمایه و محاسبه‌گر ریسک</h2>
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div><label for="inCap" class="text-[var(--ink-muted)] block mb-1">سرمایه (USDT)</label><input id="inCap" type="number" value="10000" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inRiskPct" class="text-[var(--ink-muted)] block mb-1">ریسک هر معامله (%)</label><input id="inRiskPct" type="number" step="0.1" value="1.0" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inDir" class="text-[var(--ink-muted)] block mb-1">جهت</label><select id="inDir" class="w-full apple-input px-3 py-2.5"><option value="LONG">LONG (خرید)</option><option value="SHORT">SHORT (فروش)</option></select></div>
+          <div><label for="inEntry" class="text-[var(--ink-muted)] block mb-1">قیمت ورود</label><input id="inEntry" type="number" step="0.01" value="65000" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inSl" class="text-[var(--ink-muted)] block mb-1">حد ضرر (SL)</label><input id="inSl" type="number" step="0.01" value="64200" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inTp1" class="text-[var(--ink-muted)] block mb-1">هدف سود (TP1)</label><input id="inTp1" type="number" step="0.01" value="66800" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inLev" class="text-[var(--ink-muted)] block mb-1">اهرم درخواستی</label><input id="inLev" type="number" value="10" class="w-full apple-input px-3 py-2.5 num" /></div>
+          <div><label for="inMaxLev" class="text-[var(--ink-muted)] block mb-1">سقف اهرم مجاز</label><input id="inMaxLev" type="number" value="10" class="w-full apple-input px-3 py-2.5 num" /></div>
+        </div>
+        <button id="btnCalcRisk" type="button" class="w-full py-3 apple-btn-primary text-xs">محاسبه حجم و تخمین لیکوئیدیشن</button>
+      </div>
+      <div id="riskResultBox" class="card p-4 space-y-2"></div>
+    </section>
+
+    <!-- Backtest Tab (Plus / Pro) -->
+    <section id="tabBacktest" class="tab-panel hidden space-y-3.5">
+      <div class="card p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-sm font-extrabold">ارزیابی تاریخی روی ۱۰۰۰ کندل زنده</h2>
+          <span id="btPairTag" class="text-xs px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-bold num">BTCUSDT • 15m</span>
+        </div>
+        <p class="text-xs text-[var(--ink-muted)] leading-relaxed">اجرا با خروج ۳پله‌ای نامتقارن، کارمزد و اسلیپج واقعی و نمایش تفکیک‌شده سبک‌ها روی کندل زنده بایننس.</p>
+        <button id="btnRunBt" type="button" class="w-full py-3 apple-btn-primary text-xs">اجرای بک‌تست روی دیتای زنده صرافی</button>
+      </div>
+      <div id="btOutput" class="card p-4 space-y-3"></div>
+    </section>
+
+    <!-- Journal Tab (Free for all users including guests) -->
+    <section id="tabJournal" class="tab-panel hidden space-y-3.5">
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="card p-3 text-center"><div class="text-[11px] text-[var(--ink-muted)]">دوره ۲۰ معامله</div><div id="jBlock" class="text-xs font-extrabold mt-1">۰ از ۲۰</div></div>
+        <div class="card p-3 text-center"><div class="text-[11px] text-[var(--ink-muted)]">نمره انضباط</div><div id="jAdh" class="text-xs font-extrabold text-[var(--accent)] mt-1 num">100%</div></div>
+        <div class="card p-3 text-center"><div class="text-[11px] text-[var(--ink-muted)]">وضعیت حساب</div><div id="jLock" class="text-xs font-extrabold text-[var(--green)] mt-1">آزاد</div></div>
+      </div>
+
+      <div class="card p-4 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold">ثبت کامل پوزیشن در ژورنال</h2>
+          <button id="btnExportCsv" type="button" class="apple-btn-soft text-xs px-3 py-1.5 font-semibold">خروجی CSV</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+          <div><label for="inJSym" class="text-[var(--ink-muted)] block mb-1">نماد</label><input id="inJSym" type="text" value="BTCUSDT" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJDir" class="text-[var(--ink-muted)] block mb-1">جهت</label><select id="inJDir" class="w-full apple-input px-2.5 py-2"><option value="LONG">LONG</option><option value="SHORT">SHORT</option></select></div>
+          <div><label for="inJStrat" class="text-[var(--ink-muted)] block mb-1">سبک</label><input id="inJStrat" type="text" value="ترکیب هوشمند" class="w-full apple-input px-2.5 py-2" /></div>
+          <div><label for="inJEntry" class="text-[var(--ink-muted)] block mb-1">قیمت ورود</label><input id="inJEntry" type="number" step="0.01" placeholder="65000" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJExit" class="text-[var(--ink-muted)] block mb-1">قیمت خروج</label><input id="inJExit" type="number" step="0.01" placeholder="66200" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJSlPrice" class="text-[var(--ink-muted)] block mb-1">حد ضرر اولیه</label><input id="inJSlPrice" type="number" step="0.01" placeholder="64400" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJQty" class="text-[var(--ink-muted)] block mb-1">حجم (کوین)</label><input id="inJQty" type="number" step="0.0001" value="0.1" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJFee" class="text-[var(--ink-muted)] block mb-1">کارمزد ($)</label><input id="inJFee" type="number" step="0.1" value="4" class="w-full apple-input px-2.5 py-2 num" /></div>
+          <div><label for="inJNote" class="text-[var(--ink-muted)] block mb-1">یادداشت / دلیل</label><input id="inJNote" type="text" placeholder="پولبک تمیز..." class="w-full apple-input px-2.5 py-2" /></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs text-[var(--ink-secondary)]">
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJSl" type="checkbox" class="accent-[#0a84ff]" /> جابه‌جایی حد ضرر</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJVol" type="checkbox" class="accent-[#0a84ff]" /> نقض حجم مجاز</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJFomo" type="checkbox" class="accent-[#0a84ff]" /> ورود احساسی</label>
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="chkJFear" type="checkbox" class="accent-[#0a84ff]" /> خروج زودهنگام</label>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnAddJ" type="button" class="flex-1 py-2.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-md">ثبت در ژورنال</button>
+          <button id="btnUnlockJ" type="button" class="apple-btn-soft px-3.5 py-2.5 text-xs font-semibold">ریست قفل</button>
+        </div>
+      </div>
+
+      <div id="journalList" class="card p-4 space-y-2 text-xs"></div>
+    </section>
+
+    <!-- Profile & Subscription Tab -->
+    <section id="tabProfile" class="tab-panel hidden space-y-3.5">
+      <div class="card p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-xs text-[var(--ink-muted)]">حساب کاربری</div>
+            <div id="profUserName" class="text-sm font-extrabold mt-0.5">مهمان</div>
+            <div id="profUserEmail" class="text-[11px] text-[var(--ink-muted)] num mt-0.5">وارد نشده</div>
+          </div>
+          <span id="profPlanBadge" class="text-xs px-3 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-bold shrink-0">مهمان</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-2 border-t border-[var(--glass-ring)]">
+          <div>
+            <label for="inProfDisplayName" class="text-[var(--ink-muted)] block mb-1">نام نمایشی</label>
+            <input id="inProfDisplayName" type="text" placeholder="نام شما" class="w-full apple-input px-3 py-2" />
+          </div>
+          <div>
+            <label for="inProfUsername" class="text-[var(--ink-muted)] block mb-1">نام کاربری (Username)</label>
+            <input id="inProfUsername" type="text" placeholder="username" class="w-full apple-input px-3 py-2" />
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <button id="btnSaveProfile" type="button" class="px-4 py-2 apple-btn-primary">ذخیره پروفایل</button>
+          <button id="btnChangePass" type="button" class="px-3.5 py-2 apple-btn-soft font-semibold">تغییر رمز عبور</button>
+          <button id="btnReplayOnboarding" type="button" class="px-3.5 py-2 apple-btn-soft font-semibold">سخن آغازین، قوانین و آموزش</button>
+          <button id="btnLogout" type="button" class="px-3.5 py-2 rounded-2xl bg-rose-500/15 text-rose-500 font-bold mr-auto">ورود / خروج</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div class="rounded-2xl p-3 border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[var(--ink-muted)]">دستیار تحلیل‌گر (Plus)</div>
+            <div id="profAnalystRem" class="font-bold text-[var(--green)] mt-1">--</div>
+            <button id="btnExtAnalyst" type="button" class="mt-2 w-full py-1.5 apple-btn-soft text-xs font-semibold">تمدید دمو (+۷ روز)</button>
+          </div>
+          <div class="rounded-2xl p-3 border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[var(--ink-muted)]">دستیار تریدر (Pro)</div>
+            <div id="profTraderRem" class="font-bold text-[var(--amber)] mt-1">--</div>
+            <button id="btnExtTrader" type="button" class="mt-2 w-full py-1.5 apple-btn-soft text-xs font-semibold">تمدید دمو (+۱ روز)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-4 space-y-2.5">
+        <h3 class="text-sm font-extrabold">فعال‌سازی کد اشتراک</h3>
+        <div class="flex gap-2">
+          <input id="inLicenseKey" type="text" aria-label="کلید فعال‌سازی" placeholder="کلید فعال‌سازی (TA-...)" class="flex-1 apple-input px-3 py-2.5 text-xs num" />
+          <button id="btnActivateKey" type="button" class="px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs font-bold">تایید و فعال‌سازی</button>
+        </div>
+      </div>
+
+      <div class="card p-4 space-y-3.5">
+        <div class="text-center space-y-1">
+          <h3 class="text-base font-extrabold">ارتقا به اشتراک حرفه‌ای</h3>
+          <p class="text-xs text-[var(--ink-muted)]">مدت اشتراک را انتخاب کنید و کلید اختصاصی خود را دریافت کنید</p>
+        </div>
+
+        <div id="cycleTabs" class="apple-seg grid grid-cols-4 gap-1 text-xs">
+          <button data-cycle="1M" type="button" class="cycle-btn py-2 rounded-xl bg-blue-600 text-white font-bold">۱ ماهه</button>
+          <button data-cycle="3M" type="button" class="cycle-btn py-2 rounded-xl text-slate-400 font-semibold">۳ ماهه</button>
+          <button data-cycle="6M" type="button" class="cycle-btn py-2 rounded-xl text-slate-400 font-semibold">۶ ماهه</button>
+          <button data-cycle="1Y" type="button" class="cycle-btn py-2 rounded-xl text-slate-400 font-semibold">۱ ساله</button>
+        </div>
+
+        <div class="rounded-2xl p-2.5 border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1.5">
+          <div class="flex gap-2">
+            <input id="inDiscountCode" type="text" aria-label="کد تخفیف" placeholder="کد تخفیف خود را وارد کنید" class="flex-1 apple-input px-3 py-2 text-xs num" />
+            <button id="btnApplyDiscount" type="button" class="px-4 py-2 apple-btn-primary text-xs shrink-0">اعمال</button>
+          </div>
+          <div id="lblDiscountMsg" class="text-xs text-[var(--ink-muted)]"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="rounded-[22px] p-4 border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-3 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-extrabold text-[var(--accent)]">اشتراک Plus (تحلیل‌گر)</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-semibold">تحلیل بازار</span>
+              </div>
+              <div class="flex items-baseline gap-1.5">
+                <span id="pricePlus" class="text-2xl font-extrabold num">$1.99</span>
+                <span id="periodPlus" class="text-xs text-[var(--ink-muted)]">/ ماهانه</span>
+              </div>
+              <ul class="text-xs text-[var(--ink-secondary)] space-y-1.5 pt-1">
+                <li>✓ دسترسی کامل به <b>دستیار تحلیل‌گر</b> + فاندامنتال و اخبار</li>
+                <li>✓ بک‌تست روی ۱۰۰۰ کندل + دیتای Spot و Futures</li>
+                <li>✓ آلارم تغییر روند، رژیم، حجم و برخورد به سطوح کلیدی</li>
+                <li>✓ ماشین‌حساب ریسک و ژورنال کامل با خروجی CSV</li>
+              </ul>
+            </div>
+            <div class="space-y-1.5">
+              <button id="btnPayPlus" type="button" class="w-full py-2.5 apple-btn-primary text-xs">پرداخت آنلاین آنی Plus</button>
+              <button id="btnBuyPlus" type="button" class="w-full py-2 apple-btn-soft text-xs font-semibold">خرید از تلگرام (@erf_kbl)</button>
+            </div>
+          </div>
+
+          <div class="rounded-[22px] p-4 border-2 border-amber-400/70 bg-gradient-to-b from-blue-500/10 to-amber-500/10 space-y-3 flex flex-col justify-between shadow-lg">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-extrabold text-[var(--amber)]">اشتراک Pro (کامل)</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold">محبوب‌ترین ★</span>
+              </div>
+              <div class="flex items-baseline gap-1.5">
+                <span id="pricePro" class="text-2xl font-extrabold num">$2.99</span>
+                <span id="periodPro" class="text-xs text-[var(--ink-muted)]">/ ماهانه</span>
+              </div>
+              <ul class="text-xs text-[var(--ink-secondary)] space-y-1.5 pt-1">
+                <li>✓ هر دو مود <b>دستیار تحلیل‌گر + دستیار تریدر</b></li>
+                <li>✓ نوتیفیکیشن کامل سیگنال بالای گوشی (ورود، SL، TP1-3، RR)</li>
+                <li>✓ ترکیب خودکار اسنایپر + خروج ۳پله‌ای نامتقارن</li>
+                <li>✓ بک‌تست زنده تفکیک‌شده سبک‌ها روی ۱۰۰۰ کندل</li>
+              </ul>
+            </div>
+            <div class="space-y-1.5">
+              <button id="btnPayPro" type="button" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-extrabold text-xs shadow-md">پرداخت آنلاین آنی Pro</button>
+              <button id="btnBuyPro" type="button" class="w-full py-2 apple-btn-soft text-xs font-semibold">خرید از تلگرام (@erf_kbl)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="liveInvoiceBox" class="hidden rounded-2xl p-3.5 border border-emerald-500/40 bg-emerald-500/10 space-y-2.5 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[var(--green)]">فاکتور پرداخت آماده شد</span>
+            <span id="lblInvMeta" class="num text-xs text-[var(--ink-muted)]">--</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a id="lnkShieldzPay" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 text-center py-2.5 px-3 rounded-2xl bg-emerald-600 text-white font-bold">ورود به صفحه پرداخت</a>
+            <button id="btnVerifyInvoice" type="button" class="flex-1 py-2.5 px-3 apple-btn-primary">بررسی پرداخت و فعال‌سازی</button>
+          </div>
+          <div id="lblVerifyStatus" class="text-xs text-[var(--ink-secondary)]">پس از پرداخت، روی «بررسی پرداخت و فعال‌سازی» بزنید.</div>
+        </div>
+      </div>
+
+      <footer class="card p-3.5 text-xs text-[var(--ink-muted)] leading-relaxed">
+        <b>سلب مسئولیت ریسک:</b> این نرم‌افزار صرفاً ابزار کمکی تحلیل تکنیکال، آلارم و مدیریت ریسک است و هیچ توصیه مالی یا تضمین سودآوری ارائه نمی‌دهد.
+      </footer>
+    </section>
+  </main>
+
+  <nav aria-label="ناوبری اصلی" class="fixed inset-x-3 z-40 max-w-xl mx-auto apple-dock rounded-[26px] px-2 py-1.5">
+    <div class="grid grid-cols-7 gap-0.5">
+      <button data-tab="tabAnalysis" type="button" aria-current="page" class="nav-item active flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M14 7h7v7"/></svg>
+        <span>چارت</span>
+      </button>
+      <button data-tab="tabNews" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+        <span>اخبار</span>
+      </button>
+      <button data-tab="tabAlerts" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/></svg>
+        <span>آلارم</span>
+      </button>
+      <button data-tab="tabRisk" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M5 8h14l-2 7H7L5 8z"/></svg>
+        <span>ریسک</span>
+      </button>
+      <button data-tab="tabBacktest" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19h16M7 15v-4m5 4V7m5 8v-6"/></svg>
+        <span>بک‌تست</span>
+      </button>
+      <button data-tab="tabJournal" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4h11a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2zm3 4h6m-6 4h6m-6 4h4"/></svg>
+        <span>ژورنال</span>
+      </button>
+      <button data-tab="tabProfile" type="button" class="nav-item flex flex-col items-center py-1.5 text-[10px] font-bold">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"/></svg>
+        <span>اشتراک</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwPPbjLcZlL_3FK8qbrEA9Pf2-u_f6bUkAkL14yNC_lxMFvEtXbzLUVvCZZ7OpFCFmJNA/exec';
+    const WORKER_API_URL = 'https://pa-assistant.erfan-kaboli2004.workers.dev';
+    const TOKEN_KEY = 'ta_hmac_token_v1';
+
+    const STYLES = [
+      { id: 'price_action', label: 'پرایس اکشن (SMC / ICT / RTM)' },
+      { id: 'wyckoff', label: 'وایکوف' },
+      { id: 'classic_ta', label: 'تکنیکال کلاسیک' },
+      { id: 'momentum_mean_reversion', label: 'بازگشت به میانگین' },
+      { id: 'breakout_volatility', label: 'شکست نوسان (Squeeze)' }
+    ];
+
+    const PRICING = {
+      '1M': { label: '۱ ماهه', plusNum: 1.99, proNum: 2.99, period: '/ ماهانه' },
+      '3M': { label: '۳ ماهه', plusNum: 5.39, proNum: 7.99, period: '/ ۳ ماه (۱۰٪ تخفیف)' },
+      '6M': { label: '۶ ماهه', plusNum: 9.99, proNum: 14.99, period: '/ ۶ ماه (۱۶٪ تخفیف)' },
+      '1Y': { label: '۱ ساله', plusNum: 17.99, proNum: 26.99, period: '/ سالانه (۲۵٪ تخفیف)' }
+    };
+
+    const PROMO_PREVIEW = {
+      WELCOME15: { pct: 15, tier: 'ALL', cycles: 'ALL' },
+      PRO25: { pct: 25, tier: 'PRO', cycles: ['3M', '6M', '1Y'] }
+    };
+
+    const state = {
+      activeTab: 'tabAnalysis',
+      symbol: 'BTCUSDT',
+      tf: '15m',
+      market: 'FUTURES',
+      mode: 'ANALYST',
+      autoCombo: true,
+      selectedStyles: new Set(STYLES.map(s => s.id)),
+      selectedCycle: '1M',
+      activeDiscount: null,
+      pendingInvoiceId: null,
+      isFullscreen: false,
+      dataHealthy: false,
+      bars: [],
+      htfBars: [],
+      analystReport: null,
+      traderSignal: null,
+      noTradeReason: null,
+      btTrades: [],
+      journal: [],
+      consecutiveLosses: 0,
+      locked: false,
+      user: null
+    };
+
+    let chart = null, candleSeries = null, volumeSeries = null, priceLines = [], livePollTimer = null;
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function drawGoldSignature() {}
+
+    function getAuthToken() {
+      try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (_) { return ''; }
+    }
+    function setAuthToken(t) {
+      try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch (_) {}
+    }
+
+    function loadSavedState() {
+      try {
+        const u = localStorage.getItem('ta_user_v5');
+        if (u) state.user = JSON.parse(u);
+        const j = localStorage.getItem('ta_journal_v5');
+        if (j) {
+          const parsed = JSON.parse(j);
+          if (Array.isArray(parsed)) state.journal = parsed.filter(x => x && typeof x.netPnl === 'number' && typeof x.r === 'number');
+        }
+        const riskMeta = localStorage.getItem('ta_risk_meta_v5');
+        if (riskMeta) {
+          const rm = JSON.parse(riskMeta);
+          state.consecutiveLosses = Number(rm.consecutiveLosses) || 0;
+          state.locked = Boolean(rm.locked);
+        }
+        const prefs = localStorage.getItem('ta_prefs_v5');
+        if (prefs) {
+          const pr = JSON.parse(prefs);
+          if (Array.isArray(pr.styles) && pr.styles.length) {
+            const validIds = new Set(STYLES.map(s => s.id));
+            const mapped = pr.styles.map(id => (id === 'smc' || id === 'ict' || id === 'rtm') ? 'price_action' : id).filter(id => validIds.has(id));
+            if (mapped.length) state.selectedStyles = new Set(mapped);
+          }
+          if (typeof pr.autoCombo === 'boolean') state.autoCombo = pr.autoCombo;
+          const chkAc = document.getElementById('chkAutoCombo');
+          if (chkAc) chkAc.checked = state.autoCombo;
+          if (pr.symbol) state.symbol = pr.symbol;
+          if (pr.tf) state.tf = pr.tf;
+          if (pr.market) state.market = pr.market;
+        }
+        const pendInv = localStorage.getItem('ta_pending_inv');
+        if (pendInv) state.pendingInvoiceId = pendInv;
+      } catch (_) {}
+      document.getElementById('selSymbol').value = state.symbol;
+      document.getElementById('selTimeframe').value = state.tf;
+      document.getElementById('selMarket').value = state.market;
+    }
+
+    function saveUser() {
+      try {
+        if (state.user) localStorage.setItem('ta_user_v5', JSON.stringify(state.user));
+        else localStorage.removeItem('ta_user_v5');
+      } catch (_) {}
+    }
+
+    function savePrefs() {
+      try {
+        localStorage.setItem('ta_prefs_v5', JSON.stringify({
+          symbol: state.symbol, tf: state.tf, market: state.market, styles: Array.from(state.selectedStyles), autoCombo: state.autoCombo
+        }));
+      } catch (_) {}
+    }
+
+    function saveJournalState() {
+      try {
+        localStorage.setItem('ta_journal_v5', JSON.stringify(state.journal));
+        localStorage.setItem('ta_risk_meta_v5', JSON.stringify({ consecutiveLosses: state.consecutiveLosses, locked: state.locked }));
+      } catch (_) {}
+    }
+
+    // Theme management
+    const THEME_KEY = 'ta_apple_theme_pref_v1';
+    let themePref = localStorage.getItem(THEME_KEY) || 'auto';
+    const sysDarkMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    function resolveActiveTheme() {
+      if (themePref === 'light') return 'light';
+      if (themePref === 'dark') return 'dark';
+      return (sysDarkMedia && sysDarkMedia.matches) ? 'dark' : 'light';
+    }
+    function applyAppleTheme(pref) {
+      if (pref) {
+        themePref = pref;
+        try { localStorage.setItem(THEME_KEY, pref); } catch (_) {}
+      }
+      const resolved = resolveActiveTheme();
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.themePref === themePref));
+      if (chart) {
+        const isDark = resolved === 'dark';
+        chart.applyOptions({
+          layout: { background: { color: isDark ? '#08090d' : '#ffffff' }, textColor: isDark ? '#d1d1d6' : '#3a3a3c' },
+          grid: {
+            vertLines: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)' },
+            horzLines: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)' }
+          },
+          rightPriceScale: { borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.12)' },
+          timeScale: { borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.12)' }
+        });
+      }
+    }
+    if (sysDarkMedia && sysDarkMedia.addEventListener) {
+      sysDarkMedia.addEventListener('change', () => { if (themePref === 'auto') applyAppleTheme(); });
+    }
+
+    // Alerts & Notifications
+    const ALERT_CFG_KEY = 'ta_alert_cfg_v1';
+    const ALERT_RULES_KEY = 'ta_alert_rules_v1';
+    const ALERT_LOG_KEY = 'ta_alert_log_v1';
+    let alertCfg = {
+      sound: 'chime', signalSound: 'default', quietEnabled: false, quietStart: 23, quietEnd: 7,
+      autoSignal: true, autoTrend: true, autoLevels: true, autoRegime: true, autoRvol: true, autoNews: true,
+      vibrate: true, levelDistPct: 0.35, cooldownMin: 5
+    };
+    let lastSeenHtfBias = null, lastLevelAlertMap = {}, lastNewsAlertMap = {};
+    let customAlerts = [], alertLog = [], unreadAlerts = 0;
+    let lastAlertedSignalKey = '', lastSeenRegime = null, lastRvolAlertBar = 0;
+    let sharedAudioCtx = null, islandTimer = null;
+
+    function loadAlertsState() {
+      try {
+        const c = JSON.parse(localStorage.getItem(ALERT_CFG_KEY) || 'null');
+        if (c && typeof c === 'object') alertCfg = { ...alertCfg, ...c };
+        const r = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
+        if (Array.isArray(r)) customAlerts = r;
+        const l = JSON.parse(localStorage.getItem(ALERT_LOG_KEY) || '[]');
+        if (Array.isArray(l)) alertLog = l.slice(0, 60);
+      } catch (_) {}
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+      const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+      setVal('selAlertSound', alertCfg.sound);
+      setChk('chkQuietHours', alertCfg.quietEnabled);
+      setVal('inQuietStart', alertCfg.quietStart);
+      setVal('inQuietEnd', alertCfg.quietEnd);
+      setChk('chkAlSignal', alertCfg.autoSignal);
+      setChk('chkAlTrend', alertCfg.autoTrend !== false);
+      setChk('chkAlLevels', alertCfg.autoLevels !== false);
+      setChk('chkAlRegime', alertCfg.autoRegime);
+      setChk('chkAlRvol', alertCfg.autoRvol);
+      setChk('chkAlNews', alertCfg.autoNews !== false);
+      setChk('chkAlVibrate', alertCfg.vibrate);
+      setVal('selLevelDist', String(alertCfg.levelDistPct || 0.35));
+      setVal('selAlertCooldown', String(alertCfg.cooldownMin || 5));
+      setVal('selSignalSound', alertCfg.signalSound || 'default');
+      renderCustomAlerts();
+      renderAlertHistory();
+    }
+
+    function saveAlertsState() {
+      try {
+        localStorage.setItem(ALERT_CFG_KEY, JSON.stringify(alertCfg));
+        localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(customAlerts));
+        localStorage.setItem(ALERT_LOG_KEY, JSON.stringify(alertLog.slice(0, 60)));
+      } catch (_) {}
+    }
+
+    function isQuietHourNow() {
+      if (!alertCfg.quietEnabled) return false;
+      const hr = new Date().getHours();
+      const s = Number(alertCfg.quietStart) || 23, e = Number(alertCfg.quietEnd) || 7;
+      return s > e ? (hr >= s || hr < e) : (hr >= s && hr < e);
+    }
+
+    async function unlockIosAudio() {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        if (!sharedAudioCtx) sharedAudioCtx = new Ctx();
+        if (sharedAudioCtx.state === 'suspended') await sharedAudioCtx.resume();
+        return sharedAudioCtx;
+      } catch (_) { return null; }
+    }
+
+    async function playAlertSound(type) {
+      if (type === 'mute') return;
+      try {
+        const ctx = await unlockIosAudio();
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.015;
+        const playTone = (freq, start, dur, wave = 'sine', gainVal = 0.22) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = wave;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.001, start);
+          gain.gain.exponentialRampToValueAtTime(gainVal, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + dur + 0.02);
+        };
+        if (type === 'chime') { playTone(880, now, 0.22, 'sine', 0.2); playTone(1318.5, now + 0.14, 0.34, 'sine', 0.22); }
+        else if (type === 'sonar') { playTone(520, now, 0.18, 'triangle', 0.22); playTone(780, now + 0.22, 0.28, 'sine', 0.24); }
+        else if (type === 'sniper') { playTone(1560, now, 0.12, 'sine', 0.26); }
+        else if (type === 'siren') { playTone(980, now, 0.16, 'sawtooth', 0.16); playTone(740, now + 0.17, 0.16, 'sawtooth', 0.16); }
+      } catch (_) {}
+    }
+
+    function updateAlertBadge() {
+      const dot = document.getElementById('alertBadgeDot');
+      if (!dot) return;
+      if (unreadAlerts > 0) {
+        dot.textContent = unreadAlerts > 9 ? '9+' : String(unreadAlerts);
+        dot.classList.remove('hidden');
+      } else {
+        dot.classList.add('hidden');
+      }
+    }
+
+    function fireSmartAlarm(title, body, category = 'INFO') {
+      const entry = { id: Date.now() + Math.random(), time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }), title, body, category };
+      alertLog.unshift(entry);
+      if (alertLog.length > 60) alertLog.pop();
+      unreadAlerts++;
+      updateAlertBadge();
+      saveAlertsState();
+      renderAlertHistory();
+
+      const isl = document.getElementById('dynamicIslandAlert');
+      if (isl) {
+        document.getElementById('islandTitle').textContent = title;
+        document.getElementById('islandBody').textContent = body;
+        isl.classList.remove('hidden');
+        clearTimeout(islandTimer);
+        islandTimer = setTimeout(() => isl.classList.add('hidden'), 7000);
+      }
+      if (!isQuietHourNow()) {
+        const snd = (category === 'SIGNAL' || category === 'LEVEL') && alertCfg.signalSound && alertCfg.signalSound !== 'default' ? alertCfg.signalSound : alertCfg.sound;
+        playAlertSound(snd);
+        if (alertCfg.vibrate && navigator.vibrate) {
+          try { navigator.vibrate([120, 60, 120]); } catch (_) {}
+        }
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try { new Notification(title, { body, tag: category }); } catch (_) {}
+        }
+      }
+    }
+
+    function renderCustomAlerts() {
+      const box = document.getElementById('customAlertsList');
+      if (!box) return;
+      box.textContent = '';
+      if (!customAlerts.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-[var(--ink-muted)] text-center py-2';
+        empty.textContent = 'هنوز آلارم قیمتی ثبت نکرده‌اید.';
+        box.appendChild(empty);
+        return;
+      }
+      customAlerts.forEach(al => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2 p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]';
+        const left = document.createElement('div');
+        const main = document.createElement('div');
+        main.className = 'font-bold num';
+        main.textContent = `${al.sym} ${al.cond === 'ABOVE' ? '≥' : '≤'} ${Number(al.price).toFixed(2)}`;
+        const sub = document.createElement('div');
+        sub.className = 'text-[11px] text-[var(--ink-muted)] mt-0.5';
+        sub.textContent = `${al.repeat === 'REPEAT' ? 'تکرارشونده' : 'یک‌بار'}${al.note ? ' • ' + al.note : ''}${al.triggered ? ' (اجرا شد)' : ''}`;
+        left.appendChild(main); left.appendChild(sub);
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'px-2.5 py-1 rounded-xl bg-rose-500/15 text-rose-500 font-bold text-xs';
+        del.textContent = 'حذف';
+        del.addEventListener('click', () => {
+          customAlerts = customAlerts.filter(x => x.id !== al.id);
+          saveAlertsState();
+          renderCustomAlerts();
+        });
+        row.appendChild(left); row.appendChild(del);
+        box.appendChild(row);
+      });
+    }
+
+    function renderAlertHistory() {
+      const box = document.getElementById('alertHistoryList');
+      if (!box) return;
+      box.textContent = '';
+      if (!alertLog.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-[var(--ink-muted)] text-center py-2';
+        empty.textContent = 'تاریخچه آلارم‌ها خالی است.';
+        box.appendChild(empty);
+        return;
+      }
+      alertLog.slice(0, 25).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] flex items-start justify-between gap-2';
+        const left = document.createElement('div');
+        const t = document.createElement('div'); t.className = 'font-bold'; t.textContent = item.title;
+        const b = document.createElement('div'); b.className = 'text-[11px] text-[var(--ink-muted)] mt-0.5'; b.textContent = item.body;
+        left.appendChild(t); left.appendChild(b);
+        const tm = document.createElement('span'); tm.className = 'text-[11px] text-[var(--ink-muted)] num shrink-0'; tm.textContent = item.time;
+        row.appendChild(left); row.appendChild(tm);
+        box.appendChild(row);
+      });
+    }
+
+    // Hardware fingerprint & ban state
+    const _SEC_BAN_KEY = '_ta_s_blk';
+    const _SEC_FP_KEY = '_ta_s_fp';
+    let _deviceFp = '';
+    let _isBanned = false;
+
+    async function _sha256Hex(str) {
+      try {
+        if (window.crypto && window.crypto.subtle) {
+          const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+          return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+      } catch (_) {}
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return (h >>> 0).toString(16).padStart(8, '0');
+    }
+
+    async function _computeDeviceFingerprint() {
+      let canvasSig = 'nc', glSig = 'ngl', audioSig = 'na';
+      try {
+        const cv = document.createElement('canvas');
+        const cx = cv.getContext('2d');
+        cx.textBaseline = 'top'; cx.font = '14px Arial';
+        cx.fillStyle = '#0a84ff'; cx.fillRect(1, 1, 24, 14);
+        cx.fillStyle = '#fff'; cx.fillText('ta_fp_v2', 2, 2);
+        canvasSig = cv.toDataURL().slice(-40);
+      } catch (_) {}
+      try {
+        const glCv = document.createElement('canvas');
+        const gl = glCv.getContext('webgl') || glCv.getContext('experimental-webgl');
+        if (gl) {
+          const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+          glSig = dbg ? `${gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)}~${gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)}` : `${gl.getParameter(gl.VENDOR)}~${gl.getParameter(gl.RENDERER)}`;
+        }
+      } catch (_) {}
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const tmp = new AC();
+          audioSig = `${tmp.sampleRate}_${tmp.destination.maxChannelCount}`;
+          tmp.close().catch(() => {});
+        }
+      } catch (_) {}
+      const raw = [
+        navigator.language || '',
+        screen.width + 'x' + screen.height + 'x' + screen.colorDepth + 'x' + (window.devicePixelRatio || 1),
+        Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        navigator.hardwareConcurrency || 0,
+        navigator.maxTouchPoints || 0,
+        navigator.platform || '',
+        glSig, audioSig, canvasSig
+      ].join('|');
+      const fp = (await _sha256Hex(raw)).slice(0, 28);
+      _deviceFp = fp;
+      try { localStorage.setItem(_SEC_FP_KEY, fp); } catch (_) {}
+      return fp;
+    }
+
+    function _enforceBanScreen(reason) {
+      _isBanned = true;
+      state.dataHealthy = false;
+      state.bars = [];
+      state.traderSignal = null;
+      if (livePollTimer) clearInterval(livePollTimer);
+      try { localStorage.setItem(_SEC_BAN_KEY, JSON.stringify({ r: reason, t: Date.now(), fp: _deviceFp })); } catch (_) {}
+      const scr = document.getElementById('banLockScreen');
+      if (scr) {
+        scr.classList.remove('hidden');
+        const rt = document.getElementById('banReasonText');
+        if (rt && reason) rt.textContent = reason;
+        const ft = document.getElementById('banFpTag');
+        if (ft) ft.textContent = `Device ID: ${_deviceFp || 'LOCKED'}`;
+      }
+    }
+
+    async function callWorkerApi(path, payload) {
+      if (_isBanned) return { ok: false, banned: true };
+      if (!_deviceFp) await _computeDeviceFingerprint();
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Device-FP': _deviceFp || ''
+      };
+      const tok = getAuthToken();
+      if (tok) headers['Authorization'] = `Bearer ${tok}`;
+      try {
+        const resp = await fetch(`${WORKER_API_URL}${path}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload || {})
+        });
+        const data = await resp.json().catch(() => ({ ok: false, error: 'PARSE_ERROR' }));
+        if (resp.status === 403 && data && data.banned) {
+          _enforceBanScreen(data.reason || 'دسترسی این دستگاه به صورت دائمی مسدود شده است.');
+        }
+        return data;
+      } catch (_) {
+        return { ok: false, error: 'NETWORK_ERROR' };
+      }
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__t);
+      window.__t = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    // Feature Tiering:
+    // Free / Guest: News, Journal, Risk Management, Live Chart, Price & High-Impact News Alerts
+    // Plus: Analyst Assistant + Backtest + Trend/Regime/Volume/Level alerts
+    // Pro: Trader Assistant + Full top-of-phone / browser signal notifications
+    function hasPlusAccess() {
+      if (!state.user) return false;
+      const now = Date.now();
+      return (state.user.proUntil > now) || (state.user.plusUntil > now) || (state.user.analystDemoUntil > now);
+    }
+
+    function hasProAccess() {
+      if (!state.user) return false;
+      const now = Date.now();
+      return (state.user.proUntil > now) || (state.user.traderDemoUntil > now);
+    }
+
+    function hasAccess(mode) {
+      return mode === 'TRADER' ? hasProAccess() : hasPlusAccess();
+    }
+
+    function fmtRemaining(ms) {
+      const diff = (Number(ms) || 0) - Date.now();
+      if (diff <= 0) return 'منقضی شده';
+      const hrs = Math.ceil(diff / 3600000);
+      return hrs >= 24 ? `${Math.ceil(hrs / 24)} روز باقی‌مانده` : `${hrs} ساعت باقی‌مانده`;
+    }
+
+    function updateAlarmTierLocks() {
+      const hasPlus = hasPlusAccess();
+      const hasPro = hasProAccess();
+      const sigChk = document.getElementById('chkAlSignal');
+      if (sigChk) {
+        sigChk.disabled = !hasPro;
+        if (!hasPro) sigChk.checked = false;
+      }
+      ['chkAlTrend', 'chkAlLevels', 'chkAlRegime', 'chkAlRvol'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.disabled = !hasPlus;
+          if (!hasPlus) el.checked = false;
+        }
+      });
+      const bSig = document.getElementById('badgeAlSignalTier');
+      if (bSig) bSig.textContent = hasPro ? 'Pro ✓' : 'ویژه Pro 🔒';
+      ['badgeAlTrendTier', 'badgeAlLevelsTier'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.textContent = hasPlus ? 'Plus ✓' : 'ویژه Plus 🔒';
+      });
+    }
+
+    function updateSubscriptionUI() {
+      const badge = document.getElementById('btnHeaderPlan');
+      const pBadge = document.getElementById('profPlanBadge');
+      const nEl = document.getElementById('profUserName');
+      const eEl = document.getElementById('profUserEmail');
+      const aRem = document.getElementById('profAnalystRem');
+      const tRem = document.getElementById('profTraderRem');
+      const extA = document.getElementById('btnExtAnalyst');
+      const extT = document.getElementById('btnExtTrader');
+
+      if (!state.user) {
+        if (badge) badge.textContent = 'مهمان';
+        if (pBadge) pBadge.textContent = 'مهمان (رایگان)';
+        if (nEl) nEl.textContent = 'کاربر مهمان';
+        if (eEl) eEl.textContent = 'بدون حساب کاربری — ورود برای تحلیل‌گر و تریدر';
+        if (aRem) aRem.textContent = 'نیاز به ورود';
+        if (tRem) tRem.textContent = 'نیاز به ورود';
+        if (extA) extA.disabled = true;
+        if (extT) extT.disabled = true;
+        enforcePaywall();
+        return;
+      }
+
+      const now = Date.now();
+      const isPro = state.user.proUntil && state.user.proUntil > now;
+      const isPlus = state.user.plusUntil && state.user.plusUntil > now;
+      if (isPro) {
+        if (badge) badge.textContent = 'Pro فعال ★';
+        if (pBadge) pBadge.textContent = 'اشتراک Pro فعال';
+      } else if (isPlus) {
+        if (badge) badge.textContent = 'Plus فعال';
+        if (pBadge) pBadge.textContent = 'اشتراک Plus فعال';
+      } else {
+        const lbl = hasProAccess() ? 'دمو کامل' : (hasPlusAccess() ? 'دمو تحلیل‌گر' : 'نیاز به اشتراک');
+        if (badge) badge.textContent = lbl;
+        if (pBadge) pBadge.textContent = lbl;
+      }
+
+      if (nEl) nEl.textContent = state.user.name || '--';
+      if (eEl) eEl.textContent = state.user.email ? `${state.user.email} (${state.user.username ? '@' + state.user.username.replace(/^@/, '') : 'تاییدشده ✓'})` : 'حساب تاییدشده';
+      const dnIn = document.getElementById('inProfDisplayName');
+      if (dnIn && !dnIn.value) dnIn.value = state.user.name || '';
+      const unIn = document.getElementById('inProfUsername');
+      if (unIn && !unIn.value) unIn.value = state.user.username || state.user.name || '';
+
+      if (aRem) aRem.textContent = isPro ? fmtRemaining(state.user.proUntil) : (isPlus ? fmtRemaining(state.user.plusUntil) : fmtRemaining(state.user.analystDemoUntil));
+      if (tRem) tRem.textContent = isPro ? fmtRemaining(state.user.proUntil) : fmtRemaining(state.user.traderDemoUntil);
+
+      if (extA) {
+        extA.disabled = !!state.user.analystExtended || isPro || isPlus;
+        extA.textContent = state.user.analystExtended ? 'تمدید انجام شده' : 'تمدید رایگان (+۷ روز)';
+      }
+      if (extT) {
+        extT.disabled = !!state.user.traderExtended || isPro;
+        extT.textContent = state.user.traderExtended ? 'تمدید انجام شده' : 'تمدید رایگان (+۱ روز)';
+      }
+      enforcePaywall();
+    }
+
+    function enforcePaywall() {
+      const gate = document.getElementById('paywallGate');
+      const guestBan = document.getElementById('guestWarningBanner');
+      if (guestBan) {
+        const showGuest = !state.user && (state.activeTab === 'tabRisk' || state.activeTab === 'tabJournal' || state.activeTab === 'tabNews' || state.activeTab === 'tabAlerts' || state.activeTab === 'tabAnalysis');
+        guestBan.classList.toggle('hidden', !showGuest);
+      }
+      updateAlarmTierLocks();
+
+      const isBacktestBlocked = state.activeTab === 'tabBacktest' && (!state.user || !hasPlusAccess());
+      const isAnalysisBlocked = state.activeTab === 'tabAnalysis' && state.user && !hasAccess(state.mode);
+      if (isBacktestBlocked || isAnalysisBlocked) {
+        gate.classList.remove('hidden');
+        document.getElementById(state.activeTab).classList.add('hidden');
+        const isTr = state.mode === 'TRADER' && state.activeTab === 'tabAnalysis';
+        document.getElementById('paywallTitle').textContent = !state.user
+          ? 'برای استفاده از ارزیابی تاریخی و موتور تحلیل وارد شوید'
+          : (isTr ? 'اشتراک دستیار تریدر (Pro) فعال نیست' : 'اشتراک دستیار تحلیل‌گر (Plus) فعال نیست');
+        document.getElementById('btnPaywallExtend').classList.toggle('hidden', !state.user || (isTr ? state.user.traderExtended : state.user.analystExtended));
+      } else {
+        gate.classList.add('hidden');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById(state.activeTab).classList.remove('hidden');
+      }
+    }
+
+    function evaluateLiveAlarms() {
+      if (!state.dataHealthy || !state.bars.length) return;
+      const livePrice = state.bars[state.bars.length - 1].close;
+      let changed = false;
+
+      // Free price alerts work for all users including guests
+      for (const al of customAlerts) {
+        if (al.sym !== state.symbol) continue;
+        if (al.triggered && al.repeat === 'ONCE') continue;
+        const hit = al.cond === 'ABOVE' ? livePrice >= al.price : livePrice <= al.price;
+        if (hit && (!al.lastHitAt || Date.now() - al.lastHitAt > 120000)) {
+          al.triggered = true;
+          al.lastHitAt = Date.now();
+          changed = true;
+          fireSmartAlarm(`آلارم قیمت ${al.sym}`, `قیمت به ${livePrice.toFixed(2)} رسید (${al.cond === 'ABOVE' ? 'عبور بالا' : 'عبور پایین'})${al.note ? ' — ' + al.note : ''}`, 'PRICE');
+        }
+      }
+      if (changed) { saveAlertsState(); renderCustomAlerts(); }
+
+      // Free high-impact macro news alert (30 mins before)
+      if (alertCfg.autoNews && window._marketIntel && Array.isArray(window._marketIntel.macroEvents)) {
+        window._marketIntel.macroEvents.forEach(ev => {
+          if (ev.impact === 'High' && ev.minutesUntil !== null && ev.minutesUntil > 0 && ev.minutesUntil <= 30) {
+            const nKey = `${ev.title}_${ev.date}`;
+            if (!lastNewsAlertMap[nKey]) {
+              lastNewsAlertMap[nKey] = Date.now();
+              fireSmartAlarm(`هشدار خبر مهم (${ev.minutesUntil} دقیقه دیگر)`, `${ev.title} • پیش‌بینی: ${ev.forecast} | قبلی: ${ev.previous}`, 'NEWS');
+            }
+          }
+        });
+      }
+
+      const rep = state.analystReport;
+      if (!rep) return;
+
+      // Pro-only full signal notification
+      if (alertCfg.autoSignal && hasProAccess() && state.traderSignal) {
+        const s = state.traderSignal;
+        const comboTag = state.autoCombo ? 'ترکیب خودکار' : [...state.selectedStyles].map(id => (STYLES.find(x => x.id === id)?.label || id)).join(' + ');
+        const key = `${state.symbol}_${state.tf}_${state.bars[state.bars.length - 1].time}_${s.dir}_${comboTag}`;
+        if (key !== lastAlertedSignalKey) {
+          lastAlertedSignalKey = key;
+          const tp1 = s.tp1 ? s.tp1.toFixed(2) : '--';
+          const tp2 = s.tp2 ? s.tp2.toFixed(2) : '--';
+          const tp3 = s.tp3 ? s.tp3.toFixed(2) : '--';
+          fireSmartAlarm(
+            `سیگنال ${s.dir} • ${state.symbol} (${state.tf})`,
+            `ورود: ${s.entry.toFixed(2)} | SL: ${s.sl.toFixed(2)} | TP1: ${tp1} | TP2: ${tp2} | TP3: ${tp3} | RR ${s.rr.toFixed(2)} (${comboTag})`,
+            'SIGNAL'
+          );
+        }
+      }
+
+      // Plus-only trend / level / regime / volume alerts
+      if (!hasPlusAccess()) return;
+      const cdMs = (Number(alertCfg.cooldownMin) || 5) * 60000;
+
+      if (alertCfg.autoTrend && rep.ctx && typeof rep.ctx.htfBias === 'number') {
+        const biasLbl = b => b === 1 ? 'صعودی' : (b === -1 ? 'نزولی' : 'خنثی');
+        if (lastSeenHtfBias !== null && lastSeenHtfBias !== rep.ctx.htfBias) {
+          fireSmartAlarm(`تغییر روند تحلیل‌گر (${state.symbol})`, `روند تایم‌فریم بالاتر از «${biasLbl(lastSeenHtfBias)}» به «${biasLbl(rep.ctx.htfBias)}» تغییر کرد.`, 'REGIME');
+        }
+        lastSeenHtfBias = rep.ctx.htfBias;
+      }
+
+      if (alertCfg.autoLevels && rep.analysis && Array.isArray(rep.analysis.levels)) {
+        const maxDist = (Number(alertCfg.levelDistPct) || 0.35) / 100;
+        rep.analysis.levels.forEach(lv => {
+          if (!lv || !lv.price || lv.price <= 0) return;
+          const dist = Math.abs(livePrice - lv.price) / lv.price;
+          const lvKey = `${state.symbol}_${lv.label}`;
+          if (dist <= maxDist && (!lastLevelAlertMap[lvKey] || (Date.now() - lastLevelAlertMap[lvKey]) > cdMs)) {
+            lastLevelAlertMap[lvKey] = Date.now();
+            fireSmartAlarm(`برخورد به سطح کلیدی (${state.symbol})`, `قیمت (${livePrice.toFixed(2)}) به «${lv.label}» (${lv.price.toFixed(2)}) رسید.`, 'LEVEL');
+          }
+        });
+      }
+
+      if (alertCfg.autoRegime && lastSeenRegime && lastSeenRegime !== rep.ctx.regime) {
+        fireSmartAlarm(`تغییر رژیم بازار (${state.symbol})`, `رژیم از ${lastSeenRegime} به ${rep.ctx.regime} تغییر کرد.`, 'REGIME');
+      }
+      lastSeenRegime = rep.ctx.regime;
+
+      const closedBars = state.bars.filter(b => b.closed);
+      const lastClosedTime = closedBars.length ? closedBars[closedBars.length - 1].time : 0;
+      if (alertCfg.autoRvol && rep.rvol >= 1.8 && lastClosedTime !== lastRvolAlertBar) {
+        lastRvolAlertBar = lastClosedTime;
+        fireSmartAlarm(`اسپایک حجم غیرعادی (${state.symbol})`, `حجم نسبی RVOL به ${rep.rvol.toFixed(2)}x رسید (دلتا ${(rep.deltaRatio * 100).toFixed(0)}٪).`, 'RVOL');
+      }
+    }
+
+    // Chart & Live Data
+    function initChart() {
+      const container = document.getElementById('tvChartContainer');
+      if (!container || typeof LightweightCharts === 'undefined') return;
+      container.innerHTML = '';
+      chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || 320,
+        height: container.clientHeight || 300,
+        layout: { background: { color: '#08090d' }, textColor: '#d1d1d6', fontSize: 11 },
+        grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: 'rgba(255,255,255,0.12)', scaleMargins: { top: 0.1, bottom: 0.22 } },
+        timeScale: { borderColor: 'rgba(255,255,255,0.12)', timeVisible: true, secondsVisible: false, rightOffset: 8 },
+        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+        handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true }
+      });
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#10b981', downColor: '#f43f5e',
+        borderUpColor: '#10b981', borderDownColor: '#f43f5e',
+        wickUpColor: '#10b981', wickDownColor: '#f43f5e'
+      });
+      volumeSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '' });
+      volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+      applyAppleTheme();
+    }
+
+    function htfOf(tf) {
+      if (tf === '5m') return '1h';
+      if (tf === '15m') return '1h';
+      if (tf === '1h') return '4h';
+      return '1d';
+    }
+
+    async function fetchBinanceKlines(symbol, market, interval, limit) {
+      const endpoints = market === 'FUTURES'
+        ? ['https://fapi.binance.com/fapi/v1/klines', 'https://data-api.binance.vision/api/v3/klines']
+        : ['https://api.binance.com/api/v3/klines', 'https://data-api.binance.vision/api/v3/klines'];
+      for (const base of endpoints) {
+        try {
+          const resp = await fetch(`${base}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+          if (!resp.ok) continue;
+          const raw = await resp.json();
+          if (!Array.isArray(raw) || !raw.length) continue;
+          const now = Date.now();
+          return raw.map(k => {
+            const vol = +k[5], takerBuy = +k[9], takerSell = Math.max(0, vol - takerBuy);
+            return {
+              time: Math.floor(k[0] / 1000),
+              open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+              volume: vol, takerBuyVol: takerBuy, delta: takerBuy - takerSell,
+              closed: k[6] < now
+            };
+          });
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    async function loadMarketData() {
+      const st = document.getElementById('feedStatus');
+      const dot = document.getElementById('feedDot');
+      const banner = document.getElementById('staleBanner');
+      const reqToken = (window._loadToken = (window._loadToken || 0) + 1);
+      if (st) st.textContent = `در حال اتصال به Binance (${state.market})...`;
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+
+      const [ltf, htf] = await Promise.all([
+        fetchBinanceKlines(state.symbol, state.market, state.tf, 1000),
+        fetchBinanceKlines(state.symbol, state.market, htfOf(state.tf), 500)
+      ]);
+      if (reqToken !== window._loadToken) return;
+      if (!ltf || !htf || ltf.length < 210 || htf.length < 60) {
+        state.dataHealthy = false;
+        state.analystReport = null;
+        state.traderSignal = null;
+        if (st) st.textContent = 'قطع ارتباط با صرافی';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        if (banner) banner.classList.remove('hidden');
+        document.getElementById('outputCard').innerHTML = '<div class="text-xs text-rose-400 font-bold">دیتای زنده صرافی در دسترس نیست. صدور تحلیل و سیگنال تا وصل شدن مجدد متوقف است.</div>';
+        return;
+      }
+      state.dataHealthy = true;
+      state.bars = ltf;
+      state.htfBars = htf;
+      if (banner) banner.classList.add('hidden');
+      if (st) st.textContent = `متصل به Binance ${state.market} (زنده)`;
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      document.getElementById('lblLastSync').textContent = 'آخرین دریافت: ' + new Date().toLocaleTimeString('fa-IR');
+      const lastB = ltf[ltf.length - 1];
+      const pEl = document.getElementById('lblLivePrice');
+      if (pEl && lastB) {
+        pEl.textContent = `$${lastB.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+        pEl.className = `text-xs font-extrabold num ${lastB.close >= lastB.open ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+      updateChart();
+      runEnginesForCurrentMode();
+      startLiveCandlePolling();
+    }
+
+    function startLiveCandlePolling() {
+      if (livePollTimer) clearInterval(livePollTimer);
+      livePollTimer = setInterval(async () => {
+        if (!state.dataHealthy || !candleSeries || !state.bars.length) return;
+        const latest = await fetchBinanceKlines(state.symbol, state.market, state.tf, 2);
+        if (!latest || !latest.length) return;
+        const liveBar = latest[latest.length - 1];
+        const prevBar = latest.length > 1 ? latest[latest.length - 2] : null;
+        try {
+          candleSeries.update({ time: liveBar.time, open: liveBar.open, high: liveBar.high, low: liveBar.low, close: liveBar.close });
+          if (volumeSeries) volumeSeries.update({ time: liveBar.time, value: liveBar.volume, color: liveBar.delta >= 0 ? 'rgba(16,185,129,0.55)' : 'rgba(244,63,94,0.55)' });
+        } catch (_) {}
+        const refClose = prevBar ? prevBar.close : liveBar.open;
+        const chg = ((liveBar.close - refClose) / Math.max(1e-8, refClose)) * 100;
+        const pEl = document.getElementById('lblLivePrice');
+        const cEl = document.getElementById('lblChangePct');
+        if (pEl) {
+          pEl.textContent = `$${liveBar.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+          pEl.className = `text-xs font-extrabold num ${liveBar.close >= liveBar.open ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        if (cEl) {
+          cEl.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+          cEl.className = `text-xs num ${chg >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        document.getElementById('lblLastSync').textContent = 'آخرین دریافت: ' + new Date().toLocaleTimeString('fa-IR');
+        const lastIdx = state.bars.length - 1;
+        if (state.bars[lastIdx].time === liveBar.time) {
+          state.bars[lastIdx] = liveBar;
+          evaluateLiveAlarms();
+        } else if (liveBar.time > state.bars[lastIdx].time) {
+          if (prevBar && state.bars[lastIdx].time === prevBar.time) state.bars[lastIdx] = { ...prevBar, closed: true };
+          state.bars.push(liveBar);
+          if (state.bars.length > 1020) state.bars.shift();
+          runEnginesForCurrentMode();
+        }
+      }, 2500);
+    }
+
+    function updateChart() {
+      if (!chart || !candleSeries) initChart();
+      if (!chart || !candleSeries || !state.bars.length) return;
+      candleSeries.setData(state.bars.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+      if (volumeSeries) {
+        volumeSeries.setData(state.bars.map(b => ({
+          time: b.time, value: b.volume,
+          color: b.delta >= 0 ? 'rgba(16,185,129,0.5)' : 'rgba(244,63,94,0.5)'
+        })));
+      }
+      priceLines.forEach(pl => { try { candleSeries.removePriceLine(pl); } catch (_) {} });
+      priceLines = [];
+      const addLine = (price, color, title, style = 2) => {
+        if (!price || isNaN(price)) return;
+        priceLines.push(candleSeries.createPriceLine({ price, color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title }));
+      };
+      const a = state.analystReport;
+      if (a) {
+        addLine(a.vwap, '#38bdf8', 'VWAP', 1);
+        addLine(a.vp.poc, '#fbbf24', 'POC', 2);
+        addLine(a.lastH, '#e879f9', 'مقاومت', 2);
+        addLine(a.lastL, '#34d399', 'حمایت', 2);
+      }
+      if (state.mode === 'TRADER' && state.traderSignal) {
+        const s = state.traderSignal;
+        addLine(s.entry, '#22d3ee', 'ورود', 0);
+        addLine(s.sl, '#f43f5e', 'SL', 0);
+        addLine(s.tp1, '#10b981', 'TP1', 0);
+        addLine(s.tp2, '#4ade80', 'TP2', 2);
+      }
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, state.bars.length - 85), to: state.bars.length + 6 });
+    }
+
+    function mapStylesToServer(styleSet) {
+      const out = new Set();
+      for (const id of styleSet) {
+        if (id === 'smc' || id === 'ict' || id === 'rtm' || id === 'price_action') out.add('price_action');
+        else if (id === 'wyckoff') out.add('volume');
+        else out.add(id);
+      }
+      return out.size ? Array.from(out) : ['price_action'];
+    }
+
+    function renderStyleChips(activeStyles) {
+      const box = document.getElementById('styleChips');
+      if (!box) return;
+      box.innerHTML = STYLES.map(s => {
+        const on = activeStyles.has(s.id);
+        return `<button data-sid="${s.id}" type="button" class="style-chip text-xs px-3 py-1.5 rounded-full transition ${on ? 'apple-btn-primary' : 'apple-btn-soft font-semibold'}">${s.label}</button>`;
+      }).join('');
+      box.querySelectorAll('.style-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (state.autoCombo) {
+            state.autoCombo = false;
+            document.getElementById('chkAutoCombo').checked = false;
+            state.selectedStyles = new Set(activeStyles);
+          }
+          const id = btn.dataset.sid;
+          if (state.selectedStyles.has(id) && state.selectedStyles.size > 1) state.selectedStyles.delete(id);
+          else state.selectedStyles.add(id);
+          savePrefs();
+          runEnginesForCurrentMode();
+        });
+      });
+    }
+
+    async function runEnginesForCurrentMode() {
+      if (_isBanned || !state.dataHealthy || !state.bars.length) return;
+      const activeStyles = state.autoCombo ? new Set(STYLES.map(s => s.id)) : state.selectedStyles;
+      renderStyleChips(activeStyles);
+
+      if (!state.user || !state.user.name) {
+        const card = document.getElementById('outputCard');
+        if (card) {
+          card.innerHTML = `<div class="text-center py-3 space-y-2 text-xs">
+            <div class="font-extrabold">برای استفاده از دستیار تحلیل‌گر و تریدر وارد حساب کاربری شوید</div>
+            <p class="text-[var(--ink-muted)]">پس از ثبت‌نام و تایید ایمیل، ۷ روز دستیار تحلیل‌گر (Plus) و ۱ روز دستیار تریدر (Pro) رایگان فعال می‌شود.</p>
+            <button id="btnInlineAuthOpen" type="button" class="px-5 py-2 apple-btn-primary text-xs">ورود یا ثبت‌نام رایگان</button>
+          </div>`;
+          document.getElementById('btnInlineAuthOpen')?.addEventListener('click', () => {
+            setAuthUiMode('REGISTER');
+            document.getElementById('authModal').classList.remove('hidden');
+          });
+        }
+        return;
+      }
+
+      if (!hasAccess(state.mode)) {
+        enforcePaywall();
+        return;
+      }
+
+      const compactLtf = state.bars.filter(b => b.closed).slice(-260).map(b => ({ t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, d: b.delta }));
+      const compactHtf = state.htfBars.filter(b => b.closed).slice(-90).map(b => ({ t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, d: b.delta }));
+      const reqPayload = {
+        symbol: state.symbol,
+        market: state.market,
+        tf: state.tf,
+        mode: state.mode,
+        autoCombo: state.autoCombo,
+        styles: mapStylesToServer(activeStyles),
+        ltf: compactLtf,
+        htf: compactHtf
+      };
+
+      const res = await callWorkerApi('/api/analyze', reqPayload);
+      if (!res || !res.ok) {
+        if (res && res.paywall) { enforcePaywall(); return; }
+        if (res && !res.banned) {
+          document.getElementById('outputCard').innerHTML = '<div class="text-xs text-amber-300">در حال آماده‌سازی تحلیل بازار...</div>';
+        }
+        return;
+      }
+
+      state.analystReport = {
+        ctx: res.context,
+        kpis: res.kpis,
+        analysis: res.analysis,
+        rvol: res.kpis.rvol,
+        deltaRatio: res.kpis.deltaRatio,
+        vwap: res.kpis.vwap,
+        vp: { poc: res.kpis.poc },
+        lastH: res.kpis.lastH,
+        lastL: res.kpis.lastL,
+        activeStyles
+      };
+
+      if (state.mode === 'TRADER' && res.signal) {
+        if (res.signal.ok) {
+          state.traderSignal = res.signal;
+          state.noTradeReason = null;
+          document.getElementById('inEntry').value = res.signal.entry.toFixed(2);
+          document.getElementById('inSl').value = res.signal.sl.toFixed(2);
+          document.getElementById('inTp1').value = res.signal.tp1.toFixed(2);
+          document.getElementById('inDir').value = res.signal.dir;
+        } else {
+          state.traderSignal = null;
+          state.noTradeReason = res.signal.reason;
+        }
+      } else {
+        state.traderSignal = null;
+        state.noTradeReason = null;
+      }
+
+      renderAnalysisUI();
+      updateChart();
+      calculateRisk();
+      evaluateLiveAlarms();
+    }
+
+    function renderAnalysisUI() {
+      const a = state.analystReport;
+      if (!a) return;
+      document.getElementById('lblPairTf').textContent = `${state.symbol} • ${state.tf}`;
+      document.getElementById('lblMarketBadge').textContent = state.market;
+      document.getElementById('btPairTag').textContent = `${state.symbol} (${state.market}) • ${state.tf}`;
+
+      const regText = a.ctx.regime === 'TREND' ? 'رونددار (TREND)' : (a.ctx.regime === 'RANGE' ? 'رنج (RANGE)' : 'پرنوسان (VOLATILE)');
+      const htfText = a.ctx.htfBias === 1 ? 'صعودی' : (a.ctx.htfBias === -1 ? 'نزولی' : 'خنثی / رنج');
+      const htfCol = a.ctx.htfBias === 1 ? 'text-emerald-400' : (a.ctx.htfBias === -1 ? 'text-rose-400' : 'text-amber-300');
+
+      const kpis = [
+        { t: 'وضعیت بازار', v: regText, c: a.ctx.regime === 'VOLATILE' ? 'text-rose-300' : 'text-cyan-300' },
+        { t: `تایم‌فریم بالاتر (${htfOf(state.tf)})`, v: htfText, c: htfCol },
+        { t: 'VWAP / POC', v: `${a.vwap.toFixed(1)} • ${a.vp.poc.toFixed(1)}`, c: 'text-amber-300' },
+        { t: 'Taker Delta / RVOL', v: `${(a.deltaRatio * 100).toFixed(0)}% • ${a.rvol.toFixed(2)}x`, c: a.deltaRatio >= 0 ? 'text-emerald-300' : 'text-rose-300' }
+      ];
+
+      document.getElementById('dynamicKpiGrid').innerHTML = kpis.map(k => `
+        <div class="card rounded-2xl p-2.5">
+          <div class="text-xs text-[var(--ink-muted)]">${k.t}</div>
+          <div class="text-xs font-bold ${k.c} mt-1 truncate num">${k.v}</div>
+        </div>
+      `).join('');
+
+      const card = document.getElementById('outputCard');
+      if (state.mode === 'ANALYST') {
+        const sc0 = a.analysis.scenarios[0]?.prob || 33;
+        const sc2 = a.analysis.scenarios[2]?.prob || 33;
+        const bCls = sc0 > sc2 + 8 ? 'bg-emerald-500/20 text-emerald-300' : (sc2 > sc0 + 8 ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300');
+        const bLbl = sc0 > sc2 + 8 ? 'برآیند صعودی' : (sc2 > sc0 + 8 ? 'برآیند نزولی' : 'خنثی / تعادلی');
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold">گزارش دستیار تحلیل‌گر</h3>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${bCls}">${bLbl}</span>
+          </div>
+          <p class="text-xs leading-relaxed bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-3">${escHtml(a.analysis.summary)}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            ${a.analysis.scenarios.map(sc => `
+              <div class="bg-[var(--glass-subtle)] rounded-2xl p-2.5 border border-[var(--glass-ring)]">
+                <div class="flex justify-between font-bold"><span>${escHtml(sc.name)}</span><span class="num text-cyan-400">${sc.prob}%</span></div>
+                <div class="text-[var(--ink-muted)] mt-1 leading-relaxed">${escHtml(sc.desc)}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            ${a.analysis.levels.map(lv => `
+              <div class="bg-[var(--glass-subtle)] rounded-xl px-2.5 py-1.5 border border-[var(--glass-ring)] flex justify-between">
+                <span class="text-[var(--ink-muted)]">${escHtml(lv.label)}</span><span class="num font-bold">${Number(lv.price).toFixed(2)}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="bg-[var(--glass-subtle)] border border-amber-500/25 rounded-2xl p-2.5 text-xs space-y-1">
+            <div class="font-bold text-amber-400">چه چیزی نظرم را عوض می‌کند؟</div>
+            ${a.analysis.whatChanges.map(w => `<div class="text-[var(--ink-secondary)]">• ${escHtml(w)}</div>`).join('')}
+          </div>
+          ${buildAnalystIntelSnippet()}
+        `;
+      } else {
+        if (state.locked) {
+          card.innerHTML = '<div class="text-xs text-rose-400 font-bold">قفل محافظت از سرمایه فعال است (۳ ضرر متوالی). از تب ژورنال قفل را ریست کنید.</div>';
+          return;
+        }
+        const s = state.traderSignal;
+        if (s) {
+          const isL = s.dir === 'LONG';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold ${isL ? 'text-emerald-400' : 'text-rose-400'}">موقعیت تاییدشده (${s.dir})</h3>
+              <span class="text-xs px-2.5 py-0.5 rounded-full ${isL ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} num font-bold">RR خالص: ${s.rr.toFixed(2)} • اطمینان ${(s.confidence * 100).toFixed(0)}%</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div class="bg-[var(--glass-subtle)] border border-cyan-500/30 rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">ناحیه ورود</div><div class="num font-bold text-cyan-400 mt-1">${s.entry.toFixed(2)}</div></div>
+              <div class="bg-[var(--glass-subtle)] border border-rose-500/30 rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">حد ضرر ساختاری</div><div class="num font-bold text-rose-400 mt-1">${s.sl.toFixed(2)}</div></div>
+              <div class="bg-[var(--glass-subtle)] border border-emerald-500/30 rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">TP1 / TP2</div><div class="num font-bold text-emerald-400 mt-1">${s.tp1.toFixed(2)} / ${s.tp2.toFixed(2)}</div></div>
+              <div class="bg-[var(--glass-subtle)] border border-emerald-500/20 rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">هدف ۳ (TP3)</div><div class="num font-bold text-emerald-300 mt-1">${s.tp3.toFixed(2)}</div></div>
+            </div>
+            <div class="text-xs text-[var(--ink-secondary)] bg-[var(--glass-subtle)] rounded-2xl p-2.5 space-y-1">
+              ${s.reasons.map(r => `<div>• ${escHtml(r)}</div>`).join('')}
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-amber-400">دستیار تریدر — در انتظار موقعیت</h3>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">در انتظار</span>
+            </div>
+            <p class="text-xs text-[var(--ink-secondary)] leading-relaxed">دلیل: <strong>${escHtml(state.noTradeReason || 'همگرایی کافی وجود ندارد')}</strong></p>
+          `;
+        }
+      }
+    }
+
+    async function runBacktest() {
+      const box = document.getElementById('btOutput');
+      if (!box) return;
+      box.innerHTML = '<div class="text-xs text-[var(--ink-muted)] py-3 text-center">در حال ارزیابی تاریخی روی دیتای زنده...</div>';
+      const compactLtf = state.bars.filter(b => b.closed).slice(-1000).map(b => ({ t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, d: b.delta }));
+      const compactHtf = state.htfBars.filter(b => b.closed).slice(-500).map(b => ({ t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, d: b.delta }));
+      const res = await callWorkerApi('/api/backtest', {
+        symbol: state.symbol, market: state.market, tf: state.tf,
+        autoCombo: state.autoCombo, styles: mapStylesToServer(state.selectedStyles),
+        ltf: compactLtf, htf: compactHtf
+      });
+      if (!res || !res.ok) {
+        if (res && res.paywall) { enforcePaywall(); return; }
+        box.innerHTML = '<div class="text-xs text-rose-500 py-2">امکان اجرای بک‌تست در این لحظه وجود ندارد. لطفاً کمی بعد دوباره تلاش کنید.</div>';
+        return;
+      }
+      const styleNames = {
+        price_action: 'پرایس اکشن (SMC / ICT / RTM)',
+        classic_ta: 'تکنیکال کلاسیک',
+        momentum_mr: 'بازگشت به میانگین',
+        volume: 'والیوم و وایکوف',
+        breakout_volatility: 'شکست نوسان (Squeeze)'
+      };
+      const styleRows = Object.entries(res.perStyle || {}).map(([k, v]) => {
+        const wr = v.trades ? ((v.wins / v.trades) * 100).toFixed(1) : '0.0';
+        const pf = v.grossLoss > 0 ? (v.grossWin / v.grossLoss).toFixed(2) : (v.grossWin > 0 ? '9.99' : '0.00');
+        return `<div class="flex items-center justify-between p-2.5 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] text-xs">
+          <span class="font-bold">${escHtml(styleNames[k] || k)}</span>
+          <span class="num text-[var(--ink-muted)]">${v.trades} معامله • برد ${wr}% • PF ${pf}</span>
+        </div>`;
+      }).join('');
+      box.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">تعداد معاملات</div><div class="text-base font-extrabold num mt-0.5">${res.totalTrades}</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">نرخ برد</div><div class="text-base font-extrabold num mt-0.5 text-emerald-400">${res.winRate}%</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">Profit Factor</div><div class="text-base font-extrabold num mt-0.5">${res.profitFactor}</div></div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]"><div class="text-[11px] text-[var(--ink-muted)]">بازده / DD</div><div class="text-base font-extrabold num mt-0.5 ${res.netReturnPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${res.netReturnPct >= 0 ? '+' : ''}${res.netReturnPct}% (${res.maxDrawdownPct}%)</div></div>
+        </div>
+        <div class="space-y-1.5">${styleRows}</div>
+      `;
+      showToast('ارزیابی تاریخی انجام شد ✓');
+    }
+
+    function calculateRisk() {
+      const cap = +document.getElementById('inCap').value, riskPct = +document.getElementById('inRiskPct').value;
+      const dir = document.getElementById('inDir').value, entry = +document.getElementById('inEntry').value;
+      const sl = +document.getElementById('inSl').value, tp1 = +document.getElementById('inTp1').value;
+      const reqLev = +document.getElementById('inLev').value, maxLev = +document.getElementById('inMaxLev').value;
+      const out = document.getElementById('riskResultBox');
+      if (!out) return;
+      if (state.market === 'SPOT' && dir === 'SHORT') {
+        out.innerHTML = '<div class="text-xs text-rose-400">در بازار Spot امکان باز کردن پوزیشن SHORT وجود ندارد.</div>';
+        return;
+      }
+      if (!cap || cap <= 0 || !riskPct || riskPct <= 0 || riskPct > 25 || !entry || entry <= 0 || !sl || sl <= 0 || !tp1 || tp1 <= 0 || reqLev < 1 || maxLev < 1) {
+        out.innerHTML = '<div class="text-xs text-rose-400">لطفاً تمام اعداد را به‌درستی و مثبت وارد کنید (ریسک بین ۰.۱ تا ۲۵ درصد).</div>';
+        return;
+      }
+      if ((dir === 'LONG' && (sl >= entry || tp1 <= entry)) || (dir === 'SHORT' && (sl <= entry || tp1 >= entry))) {
+        out.innerHTML = '<div class="text-xs text-rose-400">جایگاه حد ضرر (SL) یا هدف سود (TP1) با جهت معامله سازگار نیست.</div>';
+        return;
+      }
+      const riskUsd = cap * (riskPct / 100);
+      const lossPerUnit = Math.abs(entry - sl) + (entry + sl) * 0.0008;
+      const qty = riskUsd / lossPerUnit;
+      const notional = qty * entry;
+      let lev = state.market === 'SPOT' ? 1 : Math.min(reqLev, maxLev);
+      let liq = null;
+      if (state.market === 'FUTURES') {
+        const mmr = notional > 250000 ? 0.01 : (notional > 50000 ? 0.005 : 0.004);
+        const stopPct = Math.abs(entry - sl) / entry;
+        lev = Math.min(lev, Math.max(1, Math.floor(1 / (stopPct * 1.35 + mmr))));
+        liq = dir === 'LONG' ? entry * (1 - 1 / lev + mmr) : entry * (1 + 1 / lev - mmr);
+      }
+      const margin = notional / lev;
+      const rewardUsd = qty * (dir === 'LONG' ? (tp1 - entry) : (entry - tp1));
+      const rr = rewardUsd / riskUsd;
+      out.innerHTML = `
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">حجم پیشنهادی</div><div class="num font-bold mt-1">${qty.toFixed(5)}</div></div>
+          <div class="bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">اهرم تخمینی / مارجین</div><div class="num font-bold text-cyan-400 mt-1">${lev}x • $${margin.toFixed(1)}</div></div>
+          <div class="bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">تخمین لیکوئیدیشن</div><div class="num font-bold text-rose-400 mt-1">${liq ? '$' + liq.toFixed(2) : 'Spot'}</div></div>
+          <div class="bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-2.5"><div class="text-[var(--ink-muted)]">ریسک دلاری / R:R</div><div class="num font-bold text-emerald-400 mt-1">$${riskUsd.toFixed(1)} • ${rr.toFixed(2)}R</div></div>
+        </div>
+      `;
+    }
+
+    function renderJournal() {
+      const list = state.journal;
+      const inBlock = list.length === 0 ? 0 : ((list.length - 1) % 20) + 1;
+      document.getElementById('jBlock').textContent = `${inBlock} از ۲۰ (کل: ${list.length})`;
+      const adh = list.length ? list.reduce((a, x) => a + (Number(x.adh) || 100), 0) / list.length : 100;
+      document.getElementById('jAdh').textContent = `${adh.toFixed(0)}%`;
+      const lk = document.getElementById('jLock');
+      lk.textContent = state.locked ? 'قفل استراحت' : `آزاد (${state.consecutiveLosses} ضرر)`;
+      lk.className = `text-xs font-bold mt-1 ${state.locked ? 'text-rose-400' : 'text-emerald-400'}`;
+
+      const container = document.getElementById('journalList');
+      container.textContent = '';
+      if (!list.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-[var(--ink-muted)] text-center py-2';
+        empty.textContent = 'هنوز معامله‌ای در ژورنال ثبت نشده است.';
+        container.appendChild(empty);
+        return;
+      }
+      list.slice().reverse().forEach((t, revIdx) => {
+        const origIdx = list.length - 1 - revIdx;
+        const row = document.createElement('div');
+        row.className = 'bg-[var(--glass-subtle)] border border-[var(--glass-ring)] rounded-2xl p-2.5 space-y-1';
+        const top = document.createElement('div');
+        top.className = 'flex items-center justify-between gap-2';
+        const left = document.createElement('span');
+        left.className = 'font-bold num';
+        left.textContent = `${t.sym} ${t.dir} • ${t.strat}`;
+        const right = document.createElement('span');
+        right.className = `num font-bold ${t.netPnl > 0 ? 'text-emerald-400' : (t.netPnl < 0 ? 'text-rose-400' : 'text-[var(--ink-muted)]')}`;
+        right.textContent = `${t.r >= 0 ? '+' : ''}${t.r.toFixed(2)}R ($${t.netPnl.toFixed(1)})`;
+        top.appendChild(left); top.appendChild(right);
+        const bot = document.createElement('div');
+        bot.className = 'flex items-center justify-between text-[var(--ink-muted)]';
+        const info = document.createElement('span');
+        info.textContent = `ورود ${t.entry} → خروج ${t.exit} | انضباط ${t.adh}%${t.note ? ' | ' + t.note : ''}`;
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'text-rose-400 px-1.5 font-bold';
+        delBtn.textContent = 'حذف';
+        delBtn.addEventListener('click', () => {
+          state.journal.splice(origIdx, 1);
+          saveJournalState();
+          renderJournal();
+        });
+        bot.appendChild(info); bot.appendChild(delBtn);
+        row.appendChild(top); row.appendChild(bot);
+        container.appendChild(row);
+      });
+    }
+
+    function calcDiscountedPrice(tier, cycle) {
+      const p = PRICING[cycle];
+      const base = tier === 'PRO' ? p.proNum : p.plusNum;
+      const d = state.activeDiscount;
+      if (!d) return { base, final: base, pct: 0, code: '' };
+      const tierOk = d.tier === 'ALL' || d.tier === tier;
+      const cycleOk = d.cycles === 'ALL' || d.cycles.includes(cycle);
+      if (!tierOk || !cycleOk) return { base, final: base, pct: 0, code: '' };
+      return { base, final: Math.max(0.5, Math.round(base * (1 - d.pct / 100) * 100) / 100), pct: d.pct, code: d.code };
+    }
+
+    function renderPlanPrices() {
+      const p = PRICING[state.selectedCycle];
+      const plusP = calcDiscountedPrice('PLUS', state.selectedCycle);
+      const proP = calcDiscountedPrice('PRO', state.selectedCycle);
+      document.getElementById('pricePlus').textContent = `$${plusP.final.toFixed(2)}`;
+      document.getElementById('periodPlus').textContent = plusP.pct > 0 ? `${p.period} (با ${plusP.pct}٪ تخفیف)` : p.period;
+      document.getElementById('pricePro').textContent = `$${proP.final.toFixed(2)}`;
+      document.getElementById('periodPro').textContent = proP.pct > 0 ? `${p.period} (با ${proP.pct}٪ تخفیف)` : p.period;
+    }
+
+    function isAllowedPayUrl(url) {
+      try {
+        const u = new URL(url);
+        return u.protocol === 'https:' && (u.hostname === 'shieldz.cash' || u.hostname.endsWith('.shieldz.cash'));
+      } catch (_) { return false; }
+    }
+
+    async function createLiveShieldzPayment(tier) {
+      const planCode = `${tier}_${state.selectedCycle}`;
+      const calc = calcDiscountedPrice(tier, state.selectedCycle);
+      const box = document.getElementById('liveInvoiceBox');
+      const stEl = document.getElementById('lblVerifyStatus');
+      const metaEl = document.getElementById('lblInvMeta');
+      const lnk = document.getElementById('lnkShieldzPay');
+      showToast('در حال آماده‌سازی لینک پرداخت...');
+      try {
+        const data = await callWorkerApi('/api/payment/create', {
+          action: 'shieldz_create_invoice',
+          nonce: (crypto.randomUUID ? crypto.randomUUID() : ('n-' + Date.now())),
+          timestamp_utc: new Date().toISOString(),
+          user_id: state.user ? (state.user.uid || state.user.name) : 'GUEST_USER',
+          customer_email: state.user ? (state.user.email || '') : '',
+          plan_code: planCode,
+          discount_code: calc.code || ''
+        });
+        if (!data || !data.ok || !isAllowedPayUrl(data.pay_url)) {
+          box.classList.remove('hidden');
+          stEl.textContent = 'خطا در ایجاد لینک پرداخت. لطفاً دوباره تلاش کنید یا از خرید تلگرام استفاده نمایید.';
+          return;
+        }
+        state.pendingInvoiceId = data.invoice_id;
+        try { localStorage.setItem('ta_pending_inv', data.invoice_id); } catch (_) {}
+        metaEl.textContent = `${planCode} • $${Number(data.final_price_usd).toFixed(2)}`;
+        lnk.href = data.pay_url;
+        stEl.textContent = 'فاکتور آماده شد. پس از پرداخت، روی «بررسی پرداخت و فعال‌سازی» بزنید.';
+        box.classList.remove('hidden');
+        window.open(data.pay_url, '_blank', 'noopener,noreferrer');
+      } catch (_) {
+        box.classList.remove('hidden');
+        stEl.textContent = 'درگاه پرداخت در این لحظه در دسترس نیست. لطفاً دوباره تلاش کنید یا از خرید تلگرام استفاده نمایید.';
+      }
+    }
+
+    async function verifyLiveShieldzPayment() {
+      if (!state.pendingInvoiceId) { showToast('ابتدا یک فاکتور پرداخت بسازید'); return; }
+      const stEl = document.getElementById('lblVerifyStatus');
+      stEl.textContent = 'در حال بررسی وضعیت پرداخت...';
+      try {
+        const data = await callWorkerApi('/api/payment/verify', {
+          action: 'shieldz_verify_invoice',
+          invoice_id: state.pendingInvoiceId
+        });
+        if (data && data.ok && (data.status === 'PAID_AND_FULFILLED' || data.status === 'ALREADY_FULFILLED') && state.user) {
+          const days = Math.min(365, Math.max(1, Number(data.duration_days) || 30));
+          const tier = data.plan_tier === 'PLUS' ? 'PLUS' : (data.plan_tier === 'PRO' ? 'PRO' : null);
+          if (!tier) { stEl.textContent = 'اطلاعات اشتراک دریافت نشد. لطفاً با پشتیبانی تماس بگیرید.'; return; }
+          const now = Date.now();
+          if (tier === 'PLUS') state.user.plusUntil = now + days * 86400000;
+          else state.user.proUntil = now + days * 86400000;
+          saveUser(); updateSubscriptionUI();
+          stEl.textContent = `پرداخت تایید شد و اشتراک ${tier} فعال گردید!${data.license_key ? ' کد اشتراک: ' + data.license_key : ''}`;
+          showToast('اشتراک شما فعال شد ✓');
+        } else {
+          stEl.textContent = 'پرداخت هنوز تکمیل نشده است. پس از انجام پرداخت دوباره بررسی کنید.';
+        }
+      } catch (_) {
+        stEl.textContent = 'خطا در بررسی وضعیت پرداخت. لطفاً دوباره تلاش کنید.';
+      }
+    }
+
+    function openTelegramPurchase(planName) {
+      const p = PRICING[state.selectedCycle];
+      const calc = calcDiscountedPrice(planName, state.selectedCycle);
+      const uName = state.user ? (state.user.username || state.user.name) : 'کاربر مهمان';
+      const discLine = calc.pct > 0 ? `\nکد تخفیف: ${calc.code} (${calc.pct}٪)` : '';
+      const msg = `سلام، درخواست خرید اشتراک ${planName} (${p.label} - $${calc.final.toFixed(2)}) برای PA-Assistant دارم.${discLine}\nنام کاربری: ${uName}`;
+      window.open(`https://t.me/erf_kbl?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+    }
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.nav-item').forEach(n => {
+        const active = n.dataset.tab === tabId;
+        n.classList.toggle('active', active);
+        if (active) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
+      });
+      document.getElementById('topControlBar').classList.toggle('hidden', tabId === 'tabProfile' || tabId === 'tabAlerts' || tabId === 'tabNews');
+      if (tabId === 'tabNews') loadMarketIntel(false);
+      if (tabId === 'tabAlerts') {
+        unreadAlerts = 0;
+        updateAlertBadge();
+        const alSym = document.getElementById('inAlSym');
+        if (alSym) alSym.value = state.symbol;
+      }
+      enforcePaywall();
+      if (tabId === 'tabAnalysis' && chart) {
+        setTimeout(() => { const c = document.getElementById('tvChartContainer'); if (c) chart.resize(c.clientWidth, c.clientHeight); }, 50);
+      }
+    }
+
+    // Firebase Auth + Profile
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyD3QfoqYEPbRL_V9grxBYWUjQLGXZANc0U",
+      authDomain: "pa-smart-assistant.firebaseapp.com",
+      projectId: "pa-smart-assistant",
+      storageBucket: "pa-smart-assistant.firebasestorage.app",
+      messagingSenderId: "717299103998",
+      appId: "1:717299103998:web:2b96328a03678770458daf",
+      measurementId: "G-HSR4E4G34M"
+    };
+
+    let fbAuth = null;
+    try {
+      if (window.firebase) {
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        fbAuth = firebase.auth();
+      }
+    } catch (_) {}
+
+    let authUiMode = 'REGISTER';
+    function setAuthUiMode(mode) {
+      authUiMode = mode;
+      const isReg = mode === 'REGISTER';
+      document.getElementById('btnAuthTabReg')?.classList.toggle('active', isReg);
+      document.getElementById('btnAuthTabLogin')?.classList.toggle('active', !isReg);
+      document.getElementById('wrapRegUsername')?.classList.toggle('hidden', !isReg);
+      document.getElementById('authTrialBanner')?.classList.toggle('hidden', !isReg);
+      document.getElementById('wrapForgotPass')?.classList.toggle('hidden', isReg);
+      document.getElementById('authFormBox')?.classList.remove('hidden');
+      document.getElementById('authVerifyBox')?.classList.add('hidden');
+      document.getElementById('authTabSwitch')?.classList.remove('hidden');
+      const btn = document.getElementById('btnCompleteReg');
+      if (btn) btn.textContent = isReg ? 'ثبت‌نام و ارسال ایمیل تایید' : 'ورود به حساب کاربری';
+      const err = document.getElementById('lblRegError');
+      if (err) { err.textContent = ''; err.classList.add('hidden'); }
+    }
+
+    function showVerifyEmailScreen(email) {
+      document.getElementById('authModal')?.classList.remove('hidden');
+      document.getElementById('authFormBox')?.classList.add('hidden');
+      document.getElementById('authTabSwitch')?.classList.add('hidden');
+      document.getElementById('authTrialBanner')?.classList.add('hidden');
+      document.getElementById('authVerifyBox')?.classList.remove('hidden');
+      const addr = document.getElementById('verifyEmailAddr');
+      if (addr) addr.textContent = email || '--';
+    }
+
+    function showAuthErr(msg) {
+      ['lblRegError', 'lblVerifyError'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+      });
+      showToast(msg);
+    }
+
+    function mapFirebaseError(code) {
+      if (code === 'auth/email-already-in-use') return 'شما قبلاً با این ایمیل حساب دارید؛ لطفاً از تب «ورود به حساب» وارد شوید.';
+      if (code === 'auth/invalid-email') return 'فرمت ایمیل واردشده معتبر نیست.';
+      if (code === 'auth/weak-password') return 'رمز عبور باید حداقل ۶ کاراکتر باشد.';
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') return 'ایمیل یا رمز عبور اشتباه است.';
+      if (code === 'auth/too-many-requests') return 'تعداد تلاش‌ها زیاد بوده؛ لطفاً چند دقیقه دیگر دوباره امتحان کنید.';
+      if (code === 'auth/network-request-failed') return 'اتصال اینترنت برقرار نشد؛ لطفاً وضعیت اینترنت یا VPN را بررسی کنید.';
+      return 'خطا در ورود به حساب کاربری. لطفاً دوباره تلاش کنید.';
+    }
+
+    async function completeFirebaseSession(fbUser, reqUsername) {
+      await _computeDeviceFingerprint();
+      let idToken = '';
+      try {
+        idToken = await fbUser.getIdToken(true);
+      } catch (e) {
+        showAuthErr('خطا در بررسی حساب کاربری. لطفاً دوباره وارد شوید.');
+        return false;
+      }
+      const res = await callWorkerApi('/api/auth/firebase-session', {
+        idToken,
+        username: reqUsername || fbUser.displayName || (fbUser.email || '').split('@')[0],
+        displayName: fbUser.displayName || reqUsername || (fbUser.email || '').split('@')[0]
+      });
+      if (res && res.banned) return false;
+      if (res && res.error === 'EMAIL_NOT_VERIFIED') {
+        showVerifyEmailScreen(fbUser.email);
+        showAuthErr('ایمیل شما هنوز تایید نشده است. لطفاً لینک داخل ایمیل را بزنید.');
+        return false;
+      }
+      if (res && res.ok && res.token && res.user) {
+        setAuthToken(res.token);
+        state.user = {
+          uid: res.user.uid,
+          email: res.user.email,
+          username: res.user.username || reqUsername || '',
+          name: res.user.name || fbUser.displayName || (fbUser.email || '').split('@')[0],
+          analystDemoUntil: res.user.analystUntil || 0,
+          traderDemoUntil: res.user.traderUntil || 0,
+          analystExtended: false,
+          traderExtended: false,
+          plusUntil: res.user.plusUntil || 0,
+          proUntil: res.user.proUntil || 0
+        };
+        saveUser();
+        document.getElementById('authModal')?.classList.add('hidden');
+        updateSubscriptionUI();
+        runEnginesForCurrentMode();
+        const obKey = `ta_onboard_done_${TERMS_VERSION}_${state.user.uid || state.user.email || 'u'}`;
+        if (!localStorage.getItem(obKey)) {
+          openOnboardingFlow(1);
+        }
+        if (res.trialBlocked) {
+          showToast(res.trialMessage || 'ترایال رایگان قبلاً روی این دستگاه استفاده شده است.');
+        } else {
+          showToast('خوش آمدید! حساب شما فعال است ✓');
+        }
+        return true;
+      }
+      showAuthErr('اتصال به حساب کاربری برقرار نشد. لطفاً اینترنت خود را بررسی کرده و دوباره تلاش کنید.');
+      return false;
+    }
+
+    // Market Intel (Fundamentals + Macro + Crypto News)
+    window._marketIntel = null;
+    async function loadMarketIntel(force = false) {
+      if (!force && window._marketIntel && window._marketIntel.symbol === state.symbol && (Date.now() - window._marketIntel.updatedAt) < 180000) {
+        renderMarketIntel();
+        return;
+      }
+      const res = await callWorkerApi('/api/market-intel', { symbol: state.symbol });
+      if (res && res.ok) {
+        window._marketIntel = res;
+        renderMarketIntel();
+        if (state.mode === 'ANALYST' && state.analystReport) {
+          renderAnalysisUI();
+        }
+        evaluateLiveAlarms();
+      }
+    }
+
+    function buildAnalystIntelSnippet() {
+      const intel = window._marketIntel;
+      if (!intel || !intel.fundamentals) return '';
+      const f = intel.fundamentals;
+      const nextEv = Array.isArray(intel.macroEvents) && intel.macroEvents.length ? intel.macroEvents[0] : null;
+      const frTxt = f.fundingRatePct !== null ? `${f.fundingRatePct}%` : '--';
+      const fngTxt = f.fearGreedVal !== null ? `${f.fearGreedVal} (${escHtml(f.fearGreedLabel)})` : '--';
+      const lsTxt = (f.longPct !== null && f.shortPct !== null) ? `${f.longPct}% / ${f.shortPct}%` : '--';
+      return `
+        <div class="bg-[var(--glass-subtle)] border border-cyan-500/25 rounded-2xl p-3 text-xs space-y-2 mt-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-cyan-400">فاندامنتال و خبر مهم پیشِ‌رو</span>
+            <button id="btnJumpToNews" type="button" class="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 font-semibold">مشاهده اخبار ←</button>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5 text-[11px]">
+            <div class="bg-[var(--glass-bg)] rounded-xl p-2 border border-[var(--glass-ring)]"><div class="text-[var(--ink-muted)]">Funding</div><div class="font-bold num mt-0.5">${frTxt}</div></div>
+            <div class="bg-[var(--glass-bg)] rounded-xl p-2 border border-[var(--glass-ring)]"><div class="text-[var(--ink-muted)]">ترس و طمع</div><div class="font-bold num mt-0.5">${fngTxt}</div></div>
+            <div class="bg-[var(--glass-bg)] rounded-xl p-2 border border-[var(--glass-ring)]"><div class="text-[var(--ink-muted)]">لانگ/شورت</div><div class="font-bold num mt-0.5">${lsTxt}</div></div>
+          </div>
+          <p class="text-[var(--ink-secondary)] leading-relaxed">${escHtml(f.summary || '')}</p>
+          ${nextEv ? `<div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] space-y-0.5">
+            <div class="font-bold text-amber-400">خبر پیشِ‌رو (${escHtml(nextEv.impact)}): ${escHtml(nextEv.title)}</div>
+            <div class="text-[var(--ink-secondary)]">پیش‌بینی: ${escHtml(nextEv.forecast)} | قبلی: ${escHtml(nextEv.previous)}</div>
+            <div class="text-[var(--ink-secondary)]">• ${escHtml(nextEv.higherImpact)}</div>
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderMarketIntel() {
+      const intel = window._marketIntel;
+      if (!intel) return;
+      const f = intel.fundamentals || {};
+      const fCards = document.getElementById('newsFundamentalCards');
+      if (fCards) {
+        fCards.innerHTML = `
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[11px] text-[var(--ink-muted)]">Funding Rate</div>
+            <div class="text-sm font-extrabold num mt-1 ${f.fundingRatePct > 0.02 ? 'text-rose-500' : (f.fundingRatePct < 0 ? 'text-emerald-500' : '')}">${f.fundingRatePct !== null ? f.fundingRatePct + '%' : '--'}</div>
+          </div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[11px] text-[var(--ink-muted)]">Open Interest</div>
+            <div class="text-sm font-extrabold num mt-1">${f.openInterest !== null ? Number(f.openInterest).toLocaleString() : '--'}</div>
+          </div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[11px] text-[var(--ink-muted)]">لانگ / شورت</div>
+            <div class="text-sm font-extrabold num mt-1">${f.longPct !== null ? `${f.longPct}% / ${f.shortPct}%` : '--'}</div>
+          </div>
+          <div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)]">
+            <div class="text-[11px] text-[var(--ink-muted)]">ترس و طمع</div>
+            <div class="text-sm font-extrabold num mt-1">${f.fearGreedVal !== null ? `${f.fearGreedVal} (${escHtml(f.fearGreedLabel)})` : '--'}</div>
+          </div>
+        `;
+      }
+      const fSum = document.getElementById('newsFundamentalSummary');
+      if (fSum) fSum.textContent = f.summary || 'داده‌های فاندامنتال در دسترس نیست.';
+
+      const mBox = document.getElementById('newsMacroList');
+      if (mBox) {
+        const evs = intel.macroEvents || [];
+        if (!evs.length) {
+          mBox.innerHTML = '<div class="text-[var(--ink-muted)] text-center py-2">رویداد مهم اقتصادی برای امروز/این هفته ثبت نشده است.</div>';
+        } else {
+          mBox.innerHTML = evs.map(ev => {
+            const impCls = ev.impact === 'High' ? 'bg-rose-500/15 text-rose-500' : 'bg-amber-500/15 text-amber-500';
+            const dtTxt = ev.date ? new Date(ev.date).toLocaleString('fa-IR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            return `<div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-bold">${escHtml(ev.title)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${impCls}">${ev.impact === 'High' ? 'اهمیت بالا' : 'اهمیت متوسط'}</span>
+              </div>
+              <div class="text-[11px] text-[var(--ink-muted)] num">زمان: ${dtTxt} • پیش‌بینی: ${escHtml(ev.forecast)} • قبلی: ${escHtml(ev.previous)}</div>
+              <div class="text-[11px] leading-relaxed text-[var(--ink-secondary)]">• ${escHtml(ev.higherImpact)}<br>• ${escHtml(ev.lowerImpact)}</div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const nBox = document.getElementById('newsFeedList');
+      if (nBox) {
+        const list = intel.news || [];
+        if (!list.length) {
+          nBox.innerHTML = '<div class="text-[var(--ink-muted)] text-center py-2">خبر جدیدی دریافت نشد.</div>';
+        } else {
+          nBox.innerHTML = list.map(item => {
+            const sCls = item.sentiment === 'BULLISH' ? 'bg-emerald-500/15 text-emerald-500' : (item.sentiment === 'BEARISH' ? 'bg-rose-500/15 text-rose-500' : 'bg-slate-500/15 text-[var(--ink-muted)]');
+            const tm = item.publishedAt ? new Date(item.publishedAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
+            return `<div class="p-3 rounded-2xl border border-[var(--glass-ring)] bg-[var(--glass-subtle)] space-y-1.5">
+              <div class="flex items-start justify-between gap-2">
+                <a href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-bold leading-snug hover:underline" dir="ltr">${escHtml(item.title)}</a>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${sCls}">${escHtml(item.sentimentLabel)}</span>
+              </div>
+              <div class="text-[11px] text-[var(--ink-secondary)]">${escHtml(item.impactNote)}</div>
+              <div class="text-[10px] text-[var(--ink-muted)]">${escHtml(item.source)} • ${tm}</div>
+            </div>`;
+          }).join('');
+        }
+      }
+    }
+
+    // Onboarding Flow
+    const TERMS_VERSION = '1.0';
+    let termsUnlocked = false, termsOpenedAt = 0, tutSlideIdx = 0;
+    const TUT_SLIDES = [
+      { icon: '📊', title: '۱. چارت زنده و دستیار تحلیل‌گر (Plus)', body: 'در تب چارت، کندل‌های زنده صرافی همراه با سطوح کلیدی (حمایت، مقاومت، VWAP و POC) نمایش داده می‌شوند. دستیار تحلیل‌گر رژیم بازار، روند تایم‌فریم بالا، ۳ سناریوی درصدی و وضعیت فاندامنتال را ارائه می‌دهد.' },
+      { icon: '🎯', title: '۲. دستیار تریدر و سبک‌های تحلیلی (Pro)', body: 'در حالت «دستیار تریدر» می‌توانید از «ترکیب خودکار هوشمند» استفاده کنید یا سبک‌های پرایس اکشن (SMC/ICT/RTM)، وایکوف، تکنیکال کلاسیک، بازگشت به میانگین و شکست نوسان را به‌صورت مستقل انتخاب کنید.' },
+      { icon: '🔔', title: '۳. آلارم‌های هوشمند و اخبار', body: 'آلارم قیمت و هشدار خبر مهم اقتصادی برای همه رایگان است. با Plus آلارم تغییر روند، رژیم، حجم و برخورد به سطوح باز می‌شود و با Pro نوتیفیکیشن کامل سیگنال بالای گوشی می‌آید.' },
+      { icon: '🛡️', title: '۴. مدیریت ریسک، بک‌تست و ژورنال', body: 'محاسبه‌گر ریسک و ژورنال معاملاتی (با قفل محافظت ۳ ضرر متوالی) برای همه رایگان است. در تب بک‌تست نیز می‌توانید عملکرد استراتژی را روی ۱۰۰۰ کندل زنده صرافی بسنجید.' }
+    ];
+
+    function setObStep(step) {
+      ['obStep1', 'obStep2', 'obStep3'].forEach((id, idx) => {
+        document.getElementById(id)?.classList.toggle('hidden', idx + 1 !== step);
+      });
+      ['obStepPill1', 'obStepPill2', 'obStepPill3'].forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const active = idx + 1 === step;
+        el.className = active
+          ? 'px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-bold'
+          : 'px-2.5 py-1 rounded-full bg-[var(--glass-subtle)] text-[var(--ink-muted)]';
+      });
+      if (step === 1) drawGoldSignature();
+      if (step === 2) { termsOpenedAt = Date.now(); updateTermsScrollProgress(); }
+      if (step === 3) { tutSlideIdx = 0; renderTutSlide(); }
+    }
+
+    function openOnboardingFlow(forceStep = 1) {
+      const m = document.getElementById('onboardingModal');
+      if (!m) return;
+      termsUnlocked = false;
+      ['chkTerm1', 'chkTerm2', 'chkTerm3'].forEach(id => {
+        const c = document.getElementById(id);
+        if (c) { c.checked = false; c.disabled = true; }
+      });
+      const acc = document.getElementById('btnAcceptTerms');
+      if (acc) acc.disabled = true;
+      const hint = document.getElementById('termsLockHint');
+      if (hint) {
+        hint.textContent = '🔒 لطفاً متن قوانین را تا ۱۰۰٪ انتها اسکرول و مطالعه کنید تا گزینه‌های تأیید باز شوند.';
+        hint.className = 'text-[11px] text-amber-400 font-semibold text-center';
+      }
+      const sb = document.getElementById('termsScrollBox');
+      if (sb) sb.scrollTop = 0;
+      m.classList.remove('hidden');
+      setObStep(forceStep);
+    }
+
+    function updateTermsScrollProgress() {
+      const sb = document.getElementById('termsScrollBox');
+      if (!sb) return;
+      const maxScroll = Math.max(1, sb.scrollHeight - sb.clientHeight);
+      const pct = Math.min(100, Math.round((sb.scrollTop / maxScroll) * 100));
+      const bar = document.getElementById('termsProgressBar');
+      const badge = document.getElementById('termsProgressBadge');
+      if (bar) bar.style.width = pct + '%';
+      if (badge) badge.textContent = pct + '%';
+
+      const elapsedSec = (Date.now() - termsOpenedAt) / 1000;
+      if (!termsUnlocked && pct >= 96) {
+        if (elapsedSec < 4) {
+          const rem = Math.ceil(4 - elapsedSec);
+          const hint = document.getElementById('termsLockHint');
+          if (hint) hint.textContent = `⏳ مطالعه تا انتها رسید؛ ${rem} ثانیه دیگر گزینه‌های تأیید باز می‌شوند...`;
+          setTimeout(updateTermsScrollProgress, 1000);
+          return;
+        }
+        termsUnlocked = true;
+        ['chkTerm1', 'chkTerm2', 'chkTerm3'].forEach(id => {
+          const c = document.getElementById(id);
+          if (c) c.disabled = false;
+        });
+        const hint = document.getElementById('termsLockHint');
+        if (hint) {
+          hint.textContent = '✓ مطالعه کامل شد. اکنون هر ۳ گزینه زیر را تأیید کنید.';
+          hint.className = 'text-[11px] text-emerald-400 font-bold text-center';
+        }
+      }
+    }
+
+    function checkTermsReady() {
+      const ok = termsUnlocked
+        && document.getElementById('chkTerm1')?.checked
+        && document.getElementById('chkTerm2')?.checked
+        && document.getElementById('chkTerm3')?.checked;
+      const btn = document.getElementById('btnAcceptTerms');
+      if (btn) btn.disabled = !ok;
+    }
+
+    function renderTutSlide() {
+      const s = TUT_SLIDES[tutSlideIdx] || TUT_SLIDES[0];
+      const ic = document.getElementById('obTutIcon'); if (ic) ic.textContent = s.icon;
+      const ti = document.getElementById('obTutTitle'); if (ti) ti.textContent = s.title;
+      const bd = document.getElementById('obTutBody'); if (bd) bd.textContent = s.body;
+      const dots = document.getElementById('obTutDots');
+      if (dots) {
+        dots.innerHTML = TUT_SLIDES.map((_, i) => `<span class="h-1.5 rounded-full transition-all ${i === tutSlideIdx ? 'w-6 bg-amber-400' : 'w-1.5 bg-[var(--glass-ring)]'}"></span>`).join('');
+      }
+      const prev = document.getElementById('btnTutPrev');
+      if (prev) prev.disabled = tutSlideIdx === 0;
+      const next = document.getElementById('btnTutNext');
+      if (next) next.textContent = tutSlideIdx === TUT_SLIDES.length - 1 ? 'ورود به برنامه ✓' : 'بعدی ←';
+    }
+
+    // Event bindings
+    document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.getElementById('btnHeaderPlan').addEventListener('click', () => switchTab('tabProfile'));
+    document.getElementById('btnGoPlans').addEventListener('click', () => switchTab('tabProfile'));
+    document.getElementById('outputCard').addEventListener('click', e => {
+      if (e.target && e.target.id === 'btnJumpToNews') switchTab('tabNews');
+    });
+
+    document.getElementById('btnModeAnalyst').addEventListener('click', () => {
+      state.mode = 'ANALYST';
+      document.getElementById('btnModeAnalyst').className = 'apple-seg-btn active py-2 text-xs font-bold';
+      document.getElementById('btnModeTrader').className = 'apple-seg-btn py-2 text-xs font-bold';
+      enforcePaywall(); runEnginesForCurrentMode();
+    });
+    document.getElementById('btnModeTrader').addEventListener('click', () => {
+      state.mode = 'TRADER';
+      document.getElementById('btnModeTrader').className = 'apple-seg-btn active py-2 text-xs font-bold';
+      document.getElementById('btnModeAnalyst').className = 'apple-seg-btn py-2 text-xs font-bold';
+      enforcePaywall(); runEnginesForCurrentMode();
+    });
+
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+      state.isFullscreen = !state.isFullscreen;
+      document.getElementById('chartCardWrapper').classList.toggle('chart-fullscreen', state.isFullscreen);
+      document.getElementById('btnFullscreen').textContent = state.isFullscreen ? '✕ بستن' : '⛶ تمام‌صفحه';
+      setTimeout(() => { if (chart) { const c = document.getElementById('tvChartContainer'); chart.resize(c.clientWidth, c.clientHeight); } }, 60);
+    });
+    document.getElementById('btnZoomIn').addEventListener('click', () => {
+      if (!chart) return; const r = chart.timeScale().getVisibleLogicalRange(); if (!r) return;
+      chart.timeScale().setVisibleLogicalRange({ from: r.to - Math.max(15, (r.to - r.from) * 0.72), to: r.to });
+    });
+    document.getElementById('btnZoomOut').addEventListener('click', () => {
+      if (!chart) return; const r = chart.timeScale().getVisibleLogicalRange(); if (!r) return;
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, r.to - (r.to - r.from) * 1.38), to: r.to });
+    });
+    document.getElementById('btnZoomReset').addEventListener('click', () => {
+      if (!chart) return; const n = state.bars.length;
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 85), to: n + 6 });
+    });
+
+    document.querySelectorAll('.cycle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.selectedCycle = btn.dataset.cycle;
+        document.querySelectorAll('.cycle-btn').forEach(b => {
+          b.className = b.dataset.cycle === state.selectedCycle ? 'cycle-btn py-2 rounded-xl bg-blue-600 text-white font-bold' : 'cycle-btn py-2 rounded-xl text-slate-400 font-semibold';
+        });
+        renderPlanPrices();
+      });
+    });
+
+    document.getElementById('btnApplyDiscount').addEventListener('click', () => {
+      const code = document.getElementById('inDiscountCode').value.trim().toUpperCase();
+      const msgEl = document.getElementById('lblDiscountMsg');
+      if (!code) { state.activeDiscount = null; msgEl.textContent = ''; renderPlanPrices(); return; }
+      const found = PROMO_PREVIEW[code];
+      if (!found) {
+        state.activeDiscount = { code, pct: 0, tier: 'ALL', cycles: 'ALL' };
+        msgEl.textContent = 'کد تخفیف ثبت شد و در مرحله پرداخت اعمال می‌شود.';
+        msgEl.className = 'text-xs text-cyan-400';
+      } else {
+        state.activeDiscount = { code, ...found };
+        msgEl.textContent = `کد ${code} (${found.pct}٪ تخفیف) اعمال شد.`;
+        msgEl.className = 'text-xs text-emerald-400 font-semibold';
+      }
+      renderPlanPrices();
+    });
+
+    document.getElementById('btnActivateKey').addEventListener('click', async () => {
+      const raw = document.getElementById('inLicenseKey').value.trim().toUpperCase();
+      if (!/^TA-(PRO|PLUS)-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/.test(raw)) {
+        showToast('فرمت کلید نامعتبر است');
+        return;
+      }
+      showToast('در حال بررسی کد اشتراک...');
+      const data = await callWorkerApi('/api/auth/activate', { license_key: raw, name: state.user ? state.user.name : 'USER' });
+      if (data && data.banned) return;
+      if (data && data.ok && state.user) {
+        if (data.token) setAuthToken(data.token);
+        if (data.user) {
+          state.user.plusUntil = data.user.plusUntil || 0;
+          state.user.proUntil = data.user.proUntil || 0;
+        }
+        saveUser(); updateSubscriptionUI(); enforcePaywall(); runEnginesForCurrentMode();
+        showToast('اشتراک با موفقیت فعال شد ✓');
+      } else {
+        showToast('کد واردشده نامعتبر یا منقضی است.');
+      }
+    });
+
+    function extendDemo(mode) {
+      if (!state.user) return;
+      const now = Date.now();
+      if (mode === 'ANALYST' && !state.user.analystExtended) {
+        state.user.analystDemoUntil = Math.max(now, state.user.analystDemoUntil || 0) + 7 * 86400000;
+        state.user.analystExtended = true; saveUser(); updateSubscriptionUI(); showToast('دموی تحلیل‌گر ۷ روز تمدید شد');
+      } else if (mode === 'TRADER' && !state.user.traderExtended) {
+        state.user.traderDemoUntil = Math.max(now, state.user.traderDemoUntil || 0) + 86400000;
+        state.user.traderExtended = true; saveUser(); updateSubscriptionUI(); showToast('دموی تریدر ۱ روز تمدید شد');
+      }
+    }
+
+    document.getElementById('btnExtAnalyst').addEventListener('click', () => extendDemo('ANALYST'));
+    document.getElementById('btnExtTrader').addEventListener('click', () => extendDemo('TRADER'));
+    document.getElementById('btnPaywallExtend').addEventListener('click', () => extendDemo(state.mode));
+    document.getElementById('btnPayPlus').addEventListener('click', () => createLiveShieldzPayment('PLUS'));
+    document.getElementById('btnPayPro').addEventListener('click', () => createLiveShieldzPayment('PRO'));
+    document.getElementById('btnVerifyInvoice').addEventListener('click', verifyLiveShieldzPayment);
+    document.getElementById('btnBuyPlus').addEventListener('click', () => openTelegramPurchase('PLUS'));
+    document.getElementById('btnBuyPro').addEventListener('click', () => openTelegramPurchase('PRO'));
+
+    document.getElementById('selSymbol').addEventListener('change', e => { state.symbol = e.target.value; savePrefs(); loadMarketData(); loadMarketIntel(false); });
+    document.getElementById('selTimeframe').addEventListener('change', e => { state.tf = e.target.value; savePrefs(); loadMarketData(); });
+    document.getElementById('selMarket').addEventListener('change', e => { state.market = e.target.value; savePrefs(); loadMarketData(); });
+    document.getElementById('chkAutoCombo').addEventListener('change', e => { state.autoCombo = e.target.checked; savePrefs(); runEnginesForCurrentMode(); });
+    document.getElementById('btnRefresh').addEventListener('click', () => { loadMarketData(); showToast('در حال بروزرسانی...'); });
+    document.getElementById('btnRetryFeed').addEventListener('click', loadMarketData);
+    document.getElementById('btnCalcRisk').addEventListener('click', () => { calculateRisk(); showToast('محاسبه انجام شد'); });
+    document.getElementById('btnRunBt').addEventListener('click', runBacktest);
+
+    document.getElementById('btnAddJ').addEventListener('click', () => {
+      const sym = document.getElementById('inJSym').value.trim().toUpperCase() || state.symbol;
+      const dir = document.getElementById('inJDir').value;
+      const strat = document.getElementById('inJStrat').value.trim() || 'عمومی';
+      const entry = +document.getElementById('inJEntry').value;
+      const exit = +document.getElementById('inJExit').value;
+      const sl = +document.getElementById('inJSlPrice').value;
+      const qty = +document.getElementById('inJQty').value;
+      const fee = +document.getElementById('inJFee').value || 0;
+      const note = document.getElementById('inJNote').value.trim();
+      if (!entry || !exit || !sl || !qty || entry <= 0 || exit <= 0 || sl <= 0 || qty <= 0) {
+        showToast('لطفاً قیمت ورود، خروج، حد ضرر و حجم را کامل وارد کنید');
+        return;
+      }
+      const riskPerUnit = Math.abs(entry - sl);
+      if (riskPerUnit <= 0) { showToast('حد ضرر نمی‌تواند برابر نقطه ورود باشد'); return; }
+      const grossPnl = dir === 'LONG' ? (exit - entry) * qty : (entry - exit) * qty;
+      const netPnl = grossPnl - fee;
+      const riskUsd = riskPerUnit * qty;
+      const r = netPnl / Math.max(1e-8, riskUsd);
+      let adh = 100;
+      if (document.getElementById('chkJSl').checked) adh -= 45;
+      if (document.getElementById('chkJVol').checked) adh -= 35;
+      if (document.getElementById('chkJFomo').checked) adh -= 20;
+      if (document.getElementById('chkJFear').checked) adh -= 20;
+      state.journal.push({ ts: new Date().toISOString(), sym, dir, strat, entry, exit, sl, qty, fee, netPnl, r, adh: Math.max(0, adh), note });
+      if (netPnl < 0) { state.consecutiveLosses++; if (state.consecutiveLosses >= 3) state.locked = true; }
+      else if (netPnl > 0) { state.consecutiveLosses = 0; state.locked = false; }
+      saveJournalState(); renderJournal(); renderAnalysisUI(); showToast('پوزیشن در ژورنال ثبت شد');
+    });
+
+    document.getElementById('btnUnlockJ').addEventListener('click', () => {
+      state.locked = false; state.consecutiveLosses = 0; saveJournalState(); renderJournal(); renderAnalysisUI(); showToast('قفل ریست شد');
+    });
+
+    document.getElementById('btnExportCsv').addEventListener('click', () => {
+      if (!state.journal.length) { showToast('ژورنال خالی است'); return; }
+      const header = 'Time,Symbol,Direction,Strategy,Entry,Exit,StopLoss,Qty,Fee,NetPnL,R,Adherence,Note\n';
+      const rows = state.journal.map(t => [t.ts, t.sym, t.dir, t.strat, t.entry, t.exit, t.sl, t.qty, t.fee, t.netPnl.toFixed(2), t.r.toFixed(2), t.adh, '"' + String(t.note || '').replace(/"/g, '""') + '"'].join(',')).join('\n');
+      const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'PA-Assistant_Journal.csv';
+      a.click();
+    });
+
+    // Auth & Profile listeners
+    document.getElementById('btnAuthTabReg')?.addEventListener('click', () => setAuthUiMode('REGISTER'));
+    document.getElementById('btnAuthTabLogin')?.addEventListener('click', () => setAuthUiMode('LOGIN'));
+
+    document.getElementById('btnCompleteReg')?.addEventListener('click', async () => {
+      if (!fbAuth) { showAuthErr('سرویس احراز هویت بارگذاری نشد؛ صفحه را رفرش کنید.'); return; }
+      const email = (document.getElementById('inAuthEmail')?.value || '').trim();
+      const pass = document.getElementById('inAuthPass')?.value || '';
+      const uname = (document.getElementById('inRegName')?.value || '').trim();
+      const btn = document.getElementById('btnCompleteReg');
+      if (!email || !email.includes('@')) { showAuthErr('لطفاً یک ایمیل معتبر وارد کنید.'); return; }
+      if (pass.length < 6) { showAuthErr('رمز عبور باید حداقل ۶ کاراکتر باشد.'); return; }
+      if (authUiMode === 'REGISTER' && uname.length < 2) { showAuthErr('لطفاً نام کاربری معتبر (حداقل ۲ حرف) وارد کنید.'); return; }
+
+      btn.disabled = true;
+      const oldTxt = btn.textContent;
+      btn.textContent = 'در حال بررسی...';
+      try {
+        if (authUiMode === 'REGISTER') {
+          const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+          try { await cred.user.updateProfile({ displayName: uname }); } catch (_) {}
+          try { localStorage.setItem('ta_pending_username', uname); } catch (_) {}
+          await cred.user.sendEmailVerification();
+          showVerifyEmailScreen(email);
+          showToast('ایمیل تایید ارسال شد ✓');
+        } else {
+          const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+          await cred.user.reload();
+          if (!cred.user.emailVerified) {
+            showVerifyEmailScreen(cred.user.email);
+            showToast('ابتدا لینک تایید ایمیل خود را کلیک کنید');
+          } else {
+            await completeFirebaseSession(cred.user, cred.user.displayName);
+          }
+        }
+      } catch (e) {
+        if (e && e.code === 'auth/email-already-in-use') {
+          setAuthUiMode('LOGIN');
+          const emIn = document.getElementById('inAuthEmail');
+          if (emIn) emIn.value = email;
+          showAuthErr('شما قبلاً با این ایمیل حساب دارید؛ لطفاً با رمز عبورتان وارد شوید.');
+        } else {
+          showAuthErr(mapFirebaseError(e && e.code));
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldTxt;
+      }
+    });
+
+    document.getElementById('btnForgotPass')?.addEventListener('click', async () => {
+      if (!fbAuth) return;
+      const email = (document.getElementById('inAuthEmail')?.value || '').trim();
+      if (!email || !email.includes('@')) { showAuthErr('ابتدا ایمیل خود را وارد کنید تا لینک بازیابی رمز ارسال شود.'); return; }
+      try {
+        await fbAuth.sendPasswordResetEmail(email);
+        showToast('لینک بازیابی رمز عبور به ایمیل شما ارسال شد ✓');
+      } catch (e) {
+        showAuthErr(mapFirebaseError(e && e.code));
+      }
+    });
+
+    document.getElementById('btnCheckVerified')?.addEventListener('click', async () => {
+      if (!fbAuth || !fbAuth.currentUser) { setAuthUiMode('LOGIN'); return; }
+      const btn = document.getElementById('btnCheckVerified');
+      const errEl = document.getElementById('lblVerifyError');
+      if (errEl) errEl.classList.add('hidden');
+      if (btn) { btn.disabled = true; btn.textContent = 'در حال بررسی تایید ایمیل...'; }
+      try {
+        await fbAuth.currentUser.reload();
+        if (!fbAuth.currentUser.emailVerified) {
+          if (errEl) { errEl.textContent = 'ایمیل هنوز تایید نشده است. روی لینک داخل ایمیل کلیک کنید و دوباره امتحان کنید.'; errEl.classList.remove('hidden'); }
+          return;
+        }
+        const pendingName = localStorage.getItem('ta_pending_username') || fbAuth.currentUser.displayName || '';
+        await completeFirebaseSession(fbAuth.currentUser, pendingName);
+      } catch (e) {
+        if (errEl) { errEl.textContent = 'اتصال اینترنت برقرار نشد. لطفاً دوباره امتحان کنید.'; errEl.classList.remove('hidden'); }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'ایمیل را تایید کردم، ورود به برنامه'; }
+      }
+    });
+
+    document.getElementById('btnResendVerify')?.addEventListener('click', async () => {
+      if (!fbAuth || !fbAuth.currentUser) return;
+      try {
+        await fbAuth.currentUser.sendEmailVerification();
+        showToast('ایمیل تایید مجدداً ارسال شد ✓');
+      } catch (e) {
+        showToast(mapFirebaseError(e && e.code));
+      }
+    });
+
+    document.getElementById('btnVerifyLogout')?.addEventListener('click', async () => {
+      try { if (fbAuth) await fbAuth.signOut(); } catch (_) {}
+      setAuthUiMode('REGISTER');
+    });
+
+    document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
+      if (!state.user) { setAuthUiMode('LOGIN'); document.getElementById('authModal')?.classList.remove('hidden'); return; }
+      const displayName = (document.getElementById('inProfDisplayName')?.value || '').trim();
+      const username = (document.getElementById('inProfUsername')?.value || '').trim();
+      if (displayName.length < 2 || username.length < 2) { showToast('نام نمایشی و نام کاربری باید حداقل ۲ کاراکتر باشند'); return; }
+      try {
+        if (fbAuth && fbAuth.currentUser) await fbAuth.currentUser.updateProfile({ displayName });
+        const res = await callWorkerApi('/api/auth/profile', { displayName, username });
+        if (res && res.ok) {
+          if (res.token) setAuthToken(res.token);
+          state.user.name = displayName;
+          state.user.username = username;
+          saveUser();
+          updateSubscriptionUI();
+          showToast('پروفایل با موفقیت ذخیره شد ✓');
+        } else {
+          showToast('خطا در ذخیره پروفایل');
+        }
+      } catch (_) { showToast('اتصال اینترنت برقرار نشد. لطفاً دوباره تلاش کنید.'); }
+    });
+
+    document.getElementById('btnChangePass')?.addEventListener('click', async () => {
+      const email = (fbAuth && fbAuth.currentUser && fbAuth.currentUser.email) || (state.user && state.user.email);
+      if (!fbAuth || !email) { showToast('ابتدا وارد حساب کاربری شوید'); return; }
+      try {
+        await fbAuth.sendPasswordResetEmail(email);
+        showToast('لینک تغییر رمز عبور به ایمیل شما ارسال شد ✓');
+      } catch (e) { showToast(mapFirebaseError(e && e.code)); }
+    });
+
+    document.getElementById('btnLogout')?.addEventListener('click', async () => {
+      try { if (fbAuth) await fbAuth.signOut(); } catch (_) {}
+      state.user = null;
+      saveUser();
+      setAuthToken('');
+      updateSubscriptionUI();
+      setAuthUiMode('LOGIN');
+      document.getElementById('authModal')?.classList.remove('hidden');
+    });
+
+    if (fbAuth) {
+      fbAuth.onAuthStateChanged(async (u) => {
+        if (u) {
+          try { await u.reload(); } catch (_) {}
+          if (!u.emailVerified) {
+            showVerifyEmailScreen(u.email);
+          } else if (!state.user || state.user.uid !== u.uid || !getAuthToken()) {
+            await completeFirebaseSession(u, u.displayName);
+          }
+        }
+      });
+    }
+
+    // Onboarding & Guest listeners
+    document.getElementById('termsScrollBox')?.addEventListener('scroll', updateTermsScrollProgress);
+    ['chkTerm1', 'chkTerm2', 'chkTerm3'].forEach(id => document.getElementById(id)?.addEventListener('change', checkTermsReady));
+    document.getElementById('btnObToTerms')?.addEventListener('click', () => setObStep(2));
+    document.getElementById('btnObBack1')?.addEventListener('click', () => setObStep(1));
+    document.getElementById('btnAcceptTerms')?.addEventListener('click', async () => {
+      const uidKey = (state.user && (state.user.uid || state.user.email)) || 'guest';
+      try { localStorage.setItem(`ta_terms_v_${TERMS_VERSION}_${uidKey}`, String(Date.now())); } catch (_) {}
+      try { await callWorkerApi('/api/auth/terms', { termsVersion: TERMS_VERSION }); } catch (_) {}
+      setObStep(3);
+    });
+    document.getElementById('btnTutPrev')?.addEventListener('click', () => {
+      if (tutSlideIdx > 0) { tutSlideIdx--; renderTutSlide(); }
+    });
+    document.getElementById('btnTutNext')?.addEventListener('click', () => {
+      if (tutSlideIdx < TUT_SLIDES.length - 1) {
+        tutSlideIdx++;
+        renderTutSlide();
+      } else {
+        const uidKey = (state.user && (state.user.uid || state.user.email)) || 'guest';
+        try { localStorage.setItem(`ta_onboard_done_${TERMS_VERSION}_${uidKey}`, '1'); } catch (_) {}
+        document.getElementById('onboardingModal')?.classList.add('hidden');
+        showToast('خوش آمدید! همه‌چیز آماده استفاده است ✓');
+      }
+    });
+    document.getElementById('btnContinueGuest')?.addEventListener('click', () => {
+      document.getElementById('authModal')?.classList.add('hidden');
+      enforcePaywall();
+      runEnginesForCurrentMode();
+      showToast('در حالت مهمان وارد شدید (اخبار، ژورنال، ریسک و آلارم قیمت رایگان است)');
+    });
+    document.getElementById('btnGuestLogin')?.addEventListener('click', () => {
+      setAuthUiMode('REGISTER');
+      document.getElementById('authModal')?.classList.remove('hidden');
+    });
+    document.getElementById('btnReplayOnboarding')?.addEventListener('click', () => openOnboardingFlow(1));
+    document.getElementById('btnRefreshIntel')?.addEventListener('click', () => { loadMarketIntel(true); showToast('در حال به‌روزرسانی اخبار و فاندامنتال...'); });
+
+    // Alert center listeners
+    document.getElementById('btnCloseIsland')?.addEventListener('click', () => document.getElementById('dynamicIslandAlert').classList.add('hidden'));
+    document.getElementById('btnHeaderAlerts')?.addEventListener('click', () => { unreadAlerts = 0; updateAlertBadge(); switchTab('tabAlerts'); });
+    document.getElementById('btnTestSound')?.addEventListener('click', async () => {
+      alertCfg.sound = document.getElementById('selAlertSound').value;
+      saveAlertsState();
+      await playAlertSound(alertCfg.sound);
+      fireSmartAlarm('تست آلارم فعال شد', 'صدای آلارم و بنر اعلان به درستی کار می‌کنند ✓', 'INFO');
+    });
+    document.getElementById('btnReqNotifPerm')?.addEventListener('click', async () => {
+      await playAlertSound(alertCfg.sound);
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (!('Notification' in window)) {
+        showToast(isIos && !isStandalone ? 'برای اعلان روی آیفون، سایت را با Share به صفحه اصلی اضافه کنید.' : 'آلارم صوتی و بنر داخل برنامه فعال است ✓');
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        try { new Notification('PA-Assistant', { body: 'اعلان‌های قیمت، خبر و سیگنال فعال شدند.' }); } catch (_) {}
+        showToast('اعلان گوشی فعال شد ✓');
+      } else {
+        showToast('آلارم صوتی داخل برنامه فعال است ✓');
+      }
+    });
+    ['selAlertSound', 'selSignalSound', 'selLevelDist', 'selAlertCooldown', 'chkQuietHours', 'inQuietStart', 'inQuietEnd', 'chkAlSignal', 'chkAlTrend', 'chkAlLevels', 'chkAlRegime', 'chkAlRvol', 'chkAlNews', 'chkAlVibrate'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', () => {
+        alertCfg.sound = document.getElementById('selAlertSound').value;
+        alertCfg.quietEnabled = document.getElementById('chkQuietHours').checked;
+        alertCfg.quietStart = Number(document.getElementById('inQuietStart').value);
+        alertCfg.quietEnd = Number(document.getElementById('inQuietEnd').value);
+        alertCfg.autoSignal = document.getElementById('chkAlSignal').checked;
+        alertCfg.autoTrend = document.getElementById('chkAlTrend')?.checked ?? true;
+        alertCfg.autoLevels = document.getElementById('chkAlLevels')?.checked ?? true;
+        alertCfg.autoNews = document.getElementById('chkAlNews')?.checked ?? true;
+        alertCfg.autoRegime = document.getElementById('chkAlRegime').checked;
+        alertCfg.autoRvol = document.getElementById('chkAlRvol').checked;
+        alertCfg.vibrate = document.getElementById('chkAlVibrate').checked;
+        alertCfg.levelDistPct = Number(document.getElementById('selLevelDist')?.value) || 0.35;
+        alertCfg.cooldownMin = Number(document.getElementById('selAlertCooldown')?.value) || 5;
+        alertCfg.signalSound = document.getElementById('selSignalSound')?.value || 'default';
+        saveAlertsState();
+        updateAlarmTierLocks();
+      });
+    });
+    document.getElementById('btnAddPriceAlert')?.addEventListener('click', () => {
+      const sym = document.getElementById('inAlSym').value;
+      const cond = document.getElementById('inAlCond').value;
+      const price = parseFloat(document.getElementById('inAlPrice').value);
+      const repeat = document.getElementById('inAlRepeat').value;
+      const note = document.getElementById('inAlNote').value.trim();
+      if (!price || price <= 0) { showToast('لطفاً قیمت هدف معتبر وارد کنید'); return; }
+      customAlerts.unshift({ id: Date.now(), sym, cond, price, repeat, note, triggered: false, lastHitAt: 0 });
+      document.getElementById('inAlPrice').value = '';
+      document.getElementById('inAlNote').value = '';
+      saveAlertsState();
+      renderCustomAlerts();
+      showToast('آلارم قیمتی ثبت شد ✓');
+      evaluateLiveAlarms();
+    });
+    document.getElementById('btnClearAlertLog')?.addEventListener('click', () => {
+      alertLog = []; unreadAlerts = 0; updateAlertBadge(); saveAlertsState(); renderAlertHistory();
+    });
+
+    window.addEventListener('resize', () => {
+      if (chart) { const c = document.getElementById('tvChartContainer'); if (c) chart.resize(c.clientWidth, c.clientHeight); }
+    });
+
+    // Startup sequence
+    loadSavedState();
+    loadAlertsState();
+    document.querySelectorAll('.theme-btn').forEach(b => b.addEventListener('click', () => applyAppleTheme(b.dataset.themePref)));
+    applyAppleTheme(themePref);
+    drawGoldSignature();
+    initChart();
+    renderJournal();
+    renderPlanPrices();
+    updateSubscriptionUI();
+    calculateRisk();
+
+    try {
+      const localBan = JSON.parse(localStorage.getItem(_SEC_BAN_KEY) || 'null');
+      if (localBan && localBan.r) _enforceBanScreen(localBan.r);
+    } catch (_) {}
+
+    if (!state.user) {
+      setAuthUiMode('REGISTER');
+      document.getElementById('authModal')?.classList.remove('hidden');
+    }
+
+    _computeDeviceFingerprint();
+    loadMarketData();
+    loadMarketIntel(false);
+    setInterval(() => { try { evaluateLiveAlarms(); } catch (_) {} }, 10000);
+  </script>
+</body>
+</html>
